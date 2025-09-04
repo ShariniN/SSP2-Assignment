@@ -1,10 +1,7 @@
-@import "tailwindcss/preflight";
-
-
-@layer components {
-  .btn-primary {
-    @apply bg-blue-600 text-white px-4 py-2 rounded;
-  }
-}
-
+@tailwind base;
+@tailwind components;
 @tailwind utilities;
+
+[x-cloak] {
+    display: none;
+}

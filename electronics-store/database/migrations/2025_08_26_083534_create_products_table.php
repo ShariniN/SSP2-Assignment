@@ -11,18 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
+    Schema::create('products', function (Blueprint $table) {
         $table->id();
         $table->string('name');
         $table->text('description')->nullable();
         $table->decimal('price', 10, 2);
-        $table->integer('stock')->default(0);
+        $table->integer('stock_quantity')->default(0);
+        $table->string('SKU')->unique();
         $table->foreignId('category_id')->constrained()->onDelete('cascade');
-        $table->string('image')->nullable();
+        $table->foreignId('brand_id')->constrained()->onDelete('cascade');
+        $table->decimal('rating', 3, 2)->default(0);
+        $table->string('image_url')->nullable();
         $table->timestamps();
-});
-
+    });
     }
+
 
     /**
      * Reverse the migrations.

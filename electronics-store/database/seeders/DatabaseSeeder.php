@@ -5,12 +5,14 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
      */
+
     public function run(): void
     {
         // Seed Categories
@@ -39,5 +41,13 @@ class DatabaseSeeder extends Seeder
                 'category_id' => 2
             ],
         ]);
+
+        User::factory()->create([
+        'name' => 'Admin User',
+        'email' => 'admin@store.com',
+        'password' => bcrypt('password'),
+        'role' => 'admin',
+        ]);
+        
     }
 }

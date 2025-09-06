@@ -9,8 +9,10 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 
-// Home
-Route::get('/', [HomeController::class, 'index'])->name('home');
+//Home
+Route::get('/', function () {
+    return view('home');
+})->name('home');  
 
 // Categories
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -21,23 +23,30 @@ Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.d
 
 // Cart
 Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
 // Checkout
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
 
-// Authentication
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [RegisterController::class, 'register']);
+Route::get('/search', [ProductController::class, 'search'])->name('search');
 
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+
+
+//Authentication
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
+    ->group(function () {
+        Route::get('/dashboard', function () {
+            return view('dashboard');
+        })->name('dashboard');
+
+        Route::middleware('admin')->group(function () {
+            Route::get('/admin', function () {
+                return view('admin.dashboard');
+            })->name('admin.dashboard');
+        });
+    });
+
+

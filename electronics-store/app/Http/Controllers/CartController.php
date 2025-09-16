@@ -41,7 +41,7 @@ class CartController extends Controller
         $tax = $this->calculateTax($subtotal);
         $total = $subtotal + $shipping + $tax;
 
-        return view('cart.index', compact('cartItems', 'subtotal', 'shipping', 'tax', 'total'));
+        return view('cart', compact('cartItems', 'subtotal', 'shipping', 'tax', 'total'));
     }
 
     /**
@@ -89,10 +89,10 @@ class CartController extends Controller
             $cart[$id]['quantity'] = $request->quantity;
             session()->put('cart', $cart);
             
-            return redirect()->route('cart.index')->with('success', 'Cart updated successfully!');
+            return redirect()->route('cart')->with('success', 'Cart updated successfully!');
         }
 
-        return redirect()->route('cart.index')->with('error', 'Item not found in cart!');
+        return redirect()->route('cart')->with('error', 'Item not found in cart!');
     }
 
     /**
@@ -106,10 +106,10 @@ class CartController extends Controller
             unset($cart[$id]);
             session()->put('cart', $cart);
             
-            return redirect()->route('cart.index')->with('success', 'Item removed from cart!');
+            return redirect()->route('cart')->with('success', 'Item removed from cart!');
         }
 
-        return redirect()->route('cart.index')->with('error', 'Item not found in cart!');
+        return redirect()->route('cart')->with('error', 'Item not found in cart!');
     }
 
     /**
@@ -119,7 +119,7 @@ class CartController extends Controller
     {
         session()->forget('cart');
         
-        return redirect()->route('cart.index')->with('success', 'Cart cleared successfully!');
+        return redirect()->route('cart')->with('success', 'Cart cleared successfully!');
     }
 
     /**
@@ -149,10 +149,10 @@ class CartController extends Controller
             session()->put('promo_code', $promoCode);
             session()->put('promo_discount', $discount);
             
-            return redirect()->route('cart.index')->with('success', "Promo code applied! You saved {$discount}%");
+            return redirect()->route('cart')->with('success', "Promo code applied! You saved {$discount}%");
         }
 
-        return redirect()->route('cart.index')->with('error', 'Invalid or expired promo code!');
+        return redirect()->route('cart')->with('error', 'Invalid or expired promo code!');
     }
 
     /**
@@ -162,7 +162,7 @@ class CartController extends Controller
     {
         session()->forget(['promo_code', 'promo_discount']);
         
-        return redirect()->route('cart.index')->with('success', 'Promo code removed!');
+        return redirect()->route('cart')->with('success', 'Promo code removed!');
     }
 
     /**
@@ -252,6 +252,6 @@ class CartController extends Controller
 
         session()->put('cart', $cart);
 
-        return redirect()->route('cart.index')->with('success', 'Cart updated successfully!');
+        return redirect()->route('cart')->with('success', 'Cart updated successfully!');
     }
 }

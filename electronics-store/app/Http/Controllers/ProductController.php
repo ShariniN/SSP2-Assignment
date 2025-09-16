@@ -64,12 +64,23 @@ class ProductController extends Controller
             ->selectRaw('MIN(price) as min_price, MAX(price) as max_price')
             ->first();
 
-        return view('products.index', compact(
+        return view('products', compact(
             'products', 
             'categories', 
             'priceRange'
         ));
     }
+
+    public function search(Request $request)
+{
+    $query = $request->input('q');
+    $products = \App\Models\Product::where('name', 'like', "%{$query}%")
+                                    ->orWhere('description', 'like', "%{$query}%")
+                                    ->paginate(12);
+
+    return view('products', compact('products'));
+}
+
 
     public function show($id)
     {

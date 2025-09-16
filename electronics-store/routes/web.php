@@ -6,36 +6,39 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
+use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\Auth\SocialLoginController;
 
-//Home
-Route::get('/', function () {
-    return view('home');
-})->name('home');  
+// Redirect to provider
+Route::get('/login/google', [SocialLoginController::class, 'redirectToGoogle'])->name('login.google');
 
-// Categories
+// Callback from provider
+Route::get('/login/google/callback', [SocialLoginController::class, 'handleGoogleCallback']);
+
+// ------------------- Home & Search -------------------
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/search', [HomeController::class, 'search'])->name('search');
+Route::get('/category/{slug}', [HomeController::class, 'category'])->name('category.show');
+
+// ------------------- Categories -------------------
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/categories/{id}', [CategoryController::class, 'showProducts'])->name('category.products');
 
-// Product Details
+// ------------------- Products -------------------
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.details');
+Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
 
-// Cart
+// ------------------- Cart -------------------
 Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
-// Checkout
+// ------------------- Checkout -------------------
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
 
-Route::get('/search', [ProductController::class, 'search'])->name('search');
-
-Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-
-
-//Authentication
+// ------------------- Authentication (Jetstream/Fortify) -------------------
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
     ->group(function () {
         Route::get('/dashboard', function () {
@@ -48,5 +51,3 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             })->name('admin.dashboard');
         });
     });
-
-

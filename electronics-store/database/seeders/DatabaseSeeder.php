@@ -2,52 +2,22 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Category;
-use App\Models\Product;
 use App\Models\User;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
      */
-
     public function run(): void
     {
-        // Seed Categories
-        Category::insert([
-            ['name' => 'Phones'],
-            ['name' => 'Laptops'],
-            ['name' => 'Audio'],
-            ['name' => 'Wearables'],
-            ['name' => 'Accessories'],
-        ]);
+        // User::factory(10)->withPersonalTeam()->create();
 
-        // Seed Products
-        Product::insert([
-            [
-                'name' => 'iPhone 15',
-                'description' => 'Latest iPhone',
-                'price' => 1200,
-                'stock' => 10,
-                'category_id' => 1
-            ],
-            [
-                'name' => 'MacBook Pro',
-                'description' => 'M2 Chip',
-                'price' => 2500,
-                'stock' => 5,
-                'category_id' => 2
-            ],
+        User::factory()->withPersonalTeam()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
         ]);
-
-        User::factory()->create([
-        'name' => 'Admin User',
-        'email' => 'admin@store.com',
-        'password' => bcrypt('password'),
-        'role' => 'admin',
-        ]);
-        
     }
 }

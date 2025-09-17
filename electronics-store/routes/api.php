@@ -18,3 +18,8 @@ Route::post('/api/token', function (Request $request) {
 
     return response()->json(['token' => $token]);
 });
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/products', [ProductController::class, 'apiIndex']); // returns JSON
+    Route::post('/orders', [OrderController::class, 'store']);       // create order
+});

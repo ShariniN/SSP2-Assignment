@@ -9,10 +9,7 @@ class CategorySeeder extends Seeder
 {
     public function run(): void
     {
-        $categories = ['Phones', 'Laptops', 'Wearables', 'Accessories', 'Audio'];
-        foreach($categories as $cat) {
-            Category::create(['name' => $cat, 'description' => $cat.' category']);
-        }
+        // Create 10 random categories
+        Category::factory()->count(10)->create();
     }
 }
-

@@ -9,10 +9,7 @@ class BrandSeeder extends Seeder
 {
     public function run(): void
     {
-        $brands = ['Samsung', 'Apple', 'Sony', 'Dell', 'HP'];
-        foreach($brands as $brand) {
-            Brand::create(['name' => $brand]);
-        }
+        // Create 8 sample brands
+        Brand::factory()->count(8)->create();
     }
 }
-

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -23,14 +24,15 @@ class SocialLoginController extends Controller
                 ['email' => $googleUser->getEmail()],
                 [
                     'name' => $googleUser->getName(),
-                    'password' => bcrypt(str()->random(16)), // Random password
+                    'password' => bcrypt(str()->random(16)),
                     'email_verified_at' => now(),
                 ]
             );
 
             Auth::login($user, true);
 
-            return redirect('/dashboard');
+            // Redirect to intended page or home if none
+            return redirect()->intended(route('home'));
 
         } catch (\Exception $e) {
             return redirect('/login')->with('error', 'Failed to login with Google.');

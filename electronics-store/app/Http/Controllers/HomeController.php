@@ -70,16 +70,17 @@ class HomeController extends Controller
         return view('search-results', compact('products', 'query'));
     }
 
-    public function category($slug)
+    public function category($id)
     {
-        $category = Category::where('slug', $slug)
-            ->where('is_active', true)
-            ->firstOrFail();
+    $category = Category::where('id', $id)
+        ->where('is_active', true)
+        ->firstOrFail();
 
-        $products = Product::where('category_id', $category->id)
-            ->where('is_active', true)
-            ->paginate(12);
+    $products = Product::where('category_id', $category->id)
+        ->where('is_active', true)
+        ->paginate(12);
 
-        return view('category', compact('category', 'products'));
+    return view('category', compact('category', 'products'));
     }
+
 }

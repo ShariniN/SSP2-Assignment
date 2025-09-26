@@ -114,10 +114,10 @@
                 <h2 class="text-3xl font-bold text-gray-800 mb-4">Shop by Category</h2>
                 <p class="text-gray-600">Find exactly what you're looking for</p>
             </div>
-            
+
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 @foreach($categories as $category)
-                    <a href="{{ route('category', $category->slug) }}" class="group">
+                    <a href="{{ route('category.show', ['id' => $category->id]) }}" class="group">
                         <div class="bg-gray-50 rounded-lg p-6 text-center hover:bg-blue-50 transition duration-200 card-hover">
                             <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition duration-200">
                                 <i class="fas fa-{{ $category->icon ?? 'microchip' }} text-2xl text-blue-600"></i>
@@ -202,14 +202,13 @@
                                 </div>
                                 
                                 <div class="flex gap-2">
-                                    <a href="{{ route('products.show', $product->id) }}" 
+                                    <a href="{{ route('product.details', $product->id) }}" 
                                        class="flex-1 bg-gray-100 text-gray-800 text-center py-2 rounded-md hover:bg-gray-200 transition duration-200 text-sm">
                                         View Details
                                     </a>
                                     @if($product->stock_quantity > 0)
-                                        <form action="{{ route('cart.add') }}" method="POST" class="flex-1">
+                                        <form action="{{ route('cart.add', $product->id) }}" method="POST" class="flex-1">
                                             @csrf
-                                            <input type="hidden" name="product_id" value="{{ $product->id }}">
                                             <input type="hidden" name="quantity" value="1">
                                             <button type="submit" 
                                                     class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-200 text-sm">
@@ -272,9 +271,8 @@
                                     ${{ number_format($product->price, 2) }}
                                 </span>
                                 @if($product->stock_quantity > 0)
-                                    <form action="{{ route('cart.add') }}" method="POST">
+                                    <form action="{{ route('cart.add', $product->id) }}" method="POST">
                                         @csrf
-                                        <input type="hidden" name="product_id" value="{{ $product->id }}">
                                         <input type="hidden" name="quantity" value="1">
                                         <button type="submit" 
                                                 class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-200 text-sm">

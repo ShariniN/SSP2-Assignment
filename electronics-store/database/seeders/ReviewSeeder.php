@@ -3,12 +3,12 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Brand;
+use App\Models\Review;
 
-class BrandSeeder extends Seeder
+class ReviewSeeder extends Seeder
 {
     public function run()
     {
-        Brand::factory()->count(10)->create();
+        Review::factory()->count(20)->create();
     }
 }

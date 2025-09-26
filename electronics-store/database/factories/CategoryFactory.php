@@ -14,11 +14,11 @@ class CategoryFactory extends Factory
     {
         $name = $this->faker->unique()->word();
 
-        return [
-            'name' => ucfirst($name),
-            'slug' => Str::slug($name),                // auto-generate slug
-            'description' => $this->faker->sentence(), // short description
-            'is_active' => $this->faker->boolean(90),  // 90% active
-        ];
+    return [
+    'name' => ucfirst($this->faker->unique()->word()),
+    'description' => $this->faker->sentence(),
+    'is_active' => $this->faker->boolean(90),
+    ];
+
     }
 }

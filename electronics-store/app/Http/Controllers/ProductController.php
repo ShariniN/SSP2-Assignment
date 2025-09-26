@@ -64,7 +64,7 @@ class ProductController extends Controller
             ->selectRaw('MIN(price) as min_price, MAX(price) as max_price')
             ->first();
 
-        return view('products', compact(
+        return view('products.index', compact(
             'products', 
             'categories', 
             'priceRange'
@@ -72,20 +72,38 @@ class ProductController extends Controller
     }
 
     public function search(Request $request)
-{
-    $query = $request->input('q');
-    $products = \App\Models\Product::where('name', 'like', "%{$query}%")
-                                    ->orWhere('description', 'like', "%{$query}%")
-                                    ->paginate(12);
+    {
+        $query = $request->input('q') ?: $request->input('search');
+        
+        if (empty($query)) {
+            return redirect()->route('products.index');
+        }
 
-    return view('products', compact('products'));
-}
+        $products = Product::where('is_active', true)
+            ->with('category')
+            ->where(function($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%")
+                  ->orWhere('sku', 'like', "%{$query}%");
+            })
+            ->latest()
+            ->paginate(12)
+            ->appends(['q' => $query]);
 
+        $categories = Category::where('is_active', true)->get();
+
+        // Get price range for filters
+        $priceRange = Product::where('is_active', true)
+            ->selectRaw('MIN(price) as min_price, MAX(price) as max_price')
+            ->first();
+
+        return view('products.index', compact('products', 'categories', 'priceRange'));
+    }
 
     public function show($id)
     {
         $product = Product::where('is_active', true)
-            ->with(['category', 'reviews'])
+            ->with(['category'])
             ->findOrFail($id);
 
         // Get related products from the same category
@@ -95,9 +113,9 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
-        // Calculate average rating if reviews exist
-        $averageRating = $product->reviews()->avg('rating') ?? 0;
-        $reviewCount = $product->reviews()->count();
+        // Mock data for reviews (since we don't have a Review model yet)
+        $averageRating = 4.2; // This should come from actual reviews
+        $reviewCount = 15;    // This should come from actual reviews count
 
         // Get product specifications (assuming you have a specifications JSON field)
         $specifications = $product->specifications ? json_decode($product->specifications, true) : [];
@@ -105,16 +123,12 @@ class ProductController extends Controller
         // Track product view (for analytics)
         $this->trackProductView($product);
 
-        // Get cart count for navigation
-        $cartCount = collect(session()->get('cart', []))->sum('quantity');
-
         return view('products.show', compact(
             'product',
             'relatedProducts',
             'averageRating',
             'reviewCount',
-            'specifications',
-            'cartCount'
+            'specifications'
         ));
     }
 

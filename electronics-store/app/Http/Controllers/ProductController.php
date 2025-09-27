@@ -70,13 +70,6 @@ class ProductController extends Controller
             'priceRange'
         ));
     }
-
-
-    public function show($id)
-    {
-        $product = Product::findOrFail($id);
-        return view('product.show', compact('product'));
-    }
     
     public function search(Request $request)
     {

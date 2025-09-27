@@ -19,11 +19,32 @@ class CartController extends Controller
     }
 
     /**
-     * Display the cart page
+     * Display the cart page with detailed debugging
      */
     public function index()
     {
+        $userId = Auth::id();
+        
+        // Let's get raw data to see what's happening
+        $allCarts = Cart::where('user_id', $userId)->get();
         $cartItems = $this->getCartItems();
+        
+        // Detailed debugging
+        $debugInfo = [
+            'authenticated_user_id' => $userId,
+            'all_carts_for_user' => $allCarts->toArray(),
+            'cart_items_collection' => $cartItems->toArray(),
+            'cart_items_count' => $cartItems->count(),
+            'cart_items_is_empty' => $cartItems->isEmpty(),
+        ];
+        
+        // Log the debug info
+        \Log::info('=== CART DEBUG INFO ===', $debugInfo);
+        
+        // Also dump to screen temporarily for debugging
+        if (request()->has('debug')) {
+            dd($debugInfo);
+        }
 
         // Calculate totals
         $subtotal = $cartItems->sum(function ($item) {

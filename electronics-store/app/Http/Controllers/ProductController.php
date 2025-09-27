@@ -71,6 +71,13 @@ class ProductController extends Controller
         ));
     }
 
+
+    public function show($id)
+    {
+        $product = Product::findOrFail($id);
+        return view('product.show', compact('product'));
+    }
+    
     public function search(Request $request)
     {
         $query = $request->input('q') ?: $request->input('search');

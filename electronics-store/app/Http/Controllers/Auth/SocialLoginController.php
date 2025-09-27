@@ -1,11 +1,11 @@
 <?php
-
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Str;
 
 class SocialLoginController extends Controller
 {
@@ -16,26 +16,19 @@ class SocialLoginController extends Controller
 
     public function handleGoogleCallback()
     {
-        try {
-            $googleUser = Socialite::driver('google')->user();
+        $socialUser = Socialite::driver('google')->stateless()->user();
 
-            // Find or create user
-            $user = User::firstOrCreate(
-                ['email' => $googleUser->getEmail()],
-                [
-                    'name' => $googleUser->getName(),
-                    'password' => bcrypt(str()->random(16)),
-                    'email_verified_at' => now(),
-                ]
-            );
+        $user = User::firstOrCreate(
+            ['email' => $socialUser->getEmail()],
+            [
+                'name' => $socialUser->getName(),
+                'google_id' => $socialUser->getId(),
+                'password' => bcrypt(Str::random(16)),
+            ]
+        );
 
-            Auth::login($user, true);
+        Auth::login($user, true);
 
-            // Redirect to intended page or home if none
-            return redirect()->intended(route('home'));
-
-        } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Failed to login with Google.');
-        }
+        return redirect()->intended('/');
     }
 }

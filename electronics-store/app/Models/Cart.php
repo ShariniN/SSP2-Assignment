@@ -47,4 +47,9 @@ class Cart extends Model
             return $item->product->price * $item->quantity;
         });
     }
+
+     public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 }

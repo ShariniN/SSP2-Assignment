@@ -12,9 +12,14 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create()
+    public function create(Request $request)
     {
-        return view('auth.login'); // Jetstream login view
+        // Store the intended URL if it exists
+        if ($request->has('redirect_to')) {
+            $request->session()->put('url.intended', $request->redirect_to);
+        }
+
+        return view('auth.login');
     }
 
     /**
@@ -23,11 +28,18 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request)
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        // Redirect to intended page or home if none
-        return redirect()->intended(route('home'));
+        // Get the intended URL or default to home
+        $intendedUrl = $request->session()->get('url.intended');
+        
+        if ($intendedUrl) {
+            $request->session()->forget('url.intended');
+            return redirect($intendedUrl);
+        }
+
+        // Default redirect based on user role or to home
+        return redirect()->route('home');
     }
 
     /**

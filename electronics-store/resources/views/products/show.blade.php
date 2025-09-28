@@ -215,16 +215,58 @@
                             @endif
                         </div>
 
-                        <!-- Enhanced Add to Cart Section with Livewire -->
+                        <!-- Enhanced Add to Cart Section with Wishlist -->
                         @auth
                             @if($product->stock_quantity > 0)
-                                <livewire:cart-component :product="$product" />
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <!-- Add to Cart Component -->
+                                    <div class="flex-1">
+                                        <livewire:cart-component :product="$product" />
+                                    </div>
+                                    
+                                    <!-- Wishlist Button -->
+                                    @php
+                                        $inWishlist = auth()->user()->wishlist()->where('product_id', $product->id)->exists();
+                                    @endphp
+                                    
+                                    <form action="{{ $inWishlist ? route('wishlist.remove', $product->id) : route('wishlist.add', $product->id) }}" 
+                                          method="POST" class="flex-1 sm:flex-initial">
+                                        @csrf
+                                        @if($inWishlist)
+                                            @method('DELETE')
+                                        @endif
+                                        <button type="submit" 
+                                            class="w-full sm:w-auto bg-pink-500 hover:bg-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                                            <i class="{{ $inWishlist ? 'fas' : 'far' }} fa-heart mr-3"></i>
+                                            {{ $inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' }}
+                                        </button>
+                                    </form>
+                                </div>
                             @else
                                 <div class="space-y-4">
                                     <button disabled 
                                             class="w-full bg-gray-200 text-gray-400 py-4 px-6 rounded-xl font-bold text-lg cursor-not-allowed">
                                         <i class="fas fa-times mr-3"></i>Out of Stock
                                     </button>
+                                    
+                                    <!-- Wishlist Button (still available when out of stock) -->
+                                    @php
+                                        $inWishlist = auth()->user()->wishlist()->where('product_id', $product->id)->exists();
+                                    @endphp
+                                    
+                                    <form action="{{ $inWishlist ? route('wishlist.remove', $product->id) : route('wishlist.add', $product->id) }}" 
+                                          method="POST" class="w-full">
+                                        @csrf
+                                        @if($inWishlist)
+                                            @method('DELETE')
+                                        @endif
+                                        <button type="submit" 
+                                            class="w-full bg-pink-500 hover:bg-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                                            <i class="{{ $inWishlist ? 'fas' : 'far' }} fa-heart mr-3"></i>
+                                            {{ $inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' }}
+                                        </button>
+                                    </form>
+                                    
                                     <button type="button" 
                                             class="w-full bg-blue-100 text-blue-700 py-3 px-6 rounded-xl font-medium hover:bg-blue-200 transition-colors">
                                         <i class="fas fa-bell mr-2"></i>Notify When Available
@@ -236,7 +278,7 @@
                                 <div class="text-center">
                                     <i class="fas fa-user-circle text-4xl text-yellow-600 mb-3"></i>
                                     <h3 class="text-lg font-bold text-yellow-800 mb-2">Sign in to Purchase</h3>
-                                    <p class="text-yellow-700 mb-4">Create an account or sign in to add items to your cart and make purchases.</p>
+                                    <p class="text-yellow-700 mb-4">Create an account or sign in to add items to your cart and wishlist.</p>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <a href="{{ route('login') }}" 
@@ -600,7 +642,7 @@
                                     @endif
                                 </div>
 
-                                <!-- Action Buttons with Livewire -->
+                                <!-- Action Buttons -->
                                 <div class="flex gap-3">
                                     <a href="{{ route('product.show', $relatedProduct->id) }}" 
                                        class="flex-1 bg-gray-100 text-gray-700 text-center py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors text-sm">
@@ -608,7 +650,7 @@
                                     </a>
                                     @auth
                                         @if($relatedProduct->stock_quantity > 0)
-                                            <button wire:click="addToCart({{ $relatedProduct->id }}, 1)" 
+                                            <button wire:click="addRelatedToCart({{ $relatedProduct->id }})" 
                                                     class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:scale-105">
                                                 <i class="fas fa-cart-plus mr-1"></i>Add to Cart
                                             </button>

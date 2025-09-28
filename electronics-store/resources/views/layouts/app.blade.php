@@ -29,6 +29,7 @@
     <nav x-data="{ open: false, searchOpen: false }" class="bg-white shadow sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
+
                 <!-- Logo -->
                 <div class="flex items-center space-x-4">
                     <a href="{{ route('home') }}" class="flex items-center space-x-2 group">
@@ -49,6 +50,7 @@
                     <x-nav-link href="{{ route('products.index') }}" :active="request()->routeIs('products.*')">
                         <i class="fas fa-th-large mr-2"></i>All Products
                     </x-nav-link>
+
                     <!-- Categories Dropdown -->
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center transition">
@@ -56,18 +58,11 @@
                             <i class="fas fa-chevron-down ml-2 text-xs"></i>
                         </button>
                         <div x-show="open" @click.away="open = false" x-transition class="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
-                            <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                                <i class="fas fa-laptop mr-3 text-blue-500"></i>Laptops & Computers
-                            </a>
-                            <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                                <i class="fas fa-mobile-alt mr-3 text-green-500"></i>Smartphones
-                            </a>
-                            <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                                <i class="fas fa-headphones mr-3 text-purple-500"></i>Audio & Headphones
-                            </a>
-                            <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                                <i class="fas fa-gamepad mr-3 text-red-500"></i>Gaming
-                            </a>
+                            @foreach($categories ?? [] as $category)
+                                <a href="{{ route('products.index', ['category' => $category->slug ?? $category->id]) }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                    <i class="fas fa-{{ $category->icon ?? 'microchip' }} mr-3 text-blue-500"></i>{{ $category->name }}
+                                </a>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -75,8 +70,7 @@
                 <!-- Search -->
                 <div class="hidden md:flex flex-1 max-w-lg mx-8">
                     <div class="relative w-full">
-                        <input type="text" placeholder="Search for products..."
-                               class="w-full px-4 py-3 pl-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <input type="text" placeholder="Search for products..." class="w-full px-4 py-3 pl-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-4">
                             <i class="fas fa-search text-gray-400"></i>
                         </div>
@@ -85,17 +79,20 @@
 
                 <!-- Right Actions -->
                 <div class="flex items-center space-x-4">
-                    <!-- Mobile Search -->
-                    <button @click="searchOpen = !searchOpen" class="md:hidden p-2 text-gray-600 hover:text-blue-600">
-                        <i class="fas fa-search text-lg"></i>
-                    </button>
 
                     <!-- Wishlist -->
                     @auth
-                        <button class="relative p-2 text-gray-600 hover:text-blue-600" onclick="toggleWishlist()">
+                        @php
+                            $wishlistCount = \App\Models\Wishlist::where('user_id', auth()->id())->count();
+                        @endphp
+                        <a href="{{ route('wishlist.index') }}" class="relative p-2 text-gray-600 hover:text-blue-600 flex items-center">
                             <i class="fas fa-heart text-lg"></i>
-                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
-                        </button>
+                            @if($wishlistCount > 0)
+                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    {{ $wishlistCount }}
+                                </span>
+                            @endif
+                        </a>
                     @endauth
 
                     <!-- Cart -->
@@ -150,6 +147,7 @@
                     <button @click="open = !open" class="lg:hidden p-2 text-gray-600 hover:text-blue-600">
                         <i class="fas fa-bars text-lg"></i>
                     </button>
+
                 </div>
             </div>
 
@@ -185,21 +183,6 @@
             backToTop.classList.toggle('hidden', window.pageYOffset < 300);
         });
         backToTop.addEventListener('click', () => window.scrollTo({top: 0, behavior: 'smooth'}));
-
-        // Wishlist toggle (example)
-        function toggleWishlist() {
-            showToast('Toggled wishlist!', 'success');
-        }
-
-        // Toast
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-transform transform translate-x-full ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
-            toast.innerText = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
-            setTimeout(() => { toast.remove(); }, 3000);
-        }
     </script>
 </body>
 </html>

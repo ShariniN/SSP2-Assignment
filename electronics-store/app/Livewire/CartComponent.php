@@ -15,30 +15,28 @@ class CartComponent extends Component
     public $shipping = 0;
     public $tax = 0;
     public $total = 0;
-    
-    // Add to cart properties
     public $quantity = [];
-    public $showAddToCart = false;
+    
+    // Add to cart specific properties
     public $product = null;
     public $addToCartQuantity = 1;
+    public $showAddToCart = false;
+    public $relatedProducts = null;
+    public $showRelatedProducts = false;
 
-    protected $listeners = ['productSelected' => 'setProduct'];
-
-    public function mount($product = null)
+    public function mount($product = null, $relatedProducts = null)
     {
         if ($product) {
             $this->product = $product;
             $this->showAddToCart = true;
-            $this->addToCartQuantity = 1;
         }
+        
+        if ($relatedProducts) {
+            $this->relatedProducts = $relatedProducts;
+            $this->showRelatedProducts = true;
+        }
+        
         $this->loadCart();
-    }
-
-    public function setProduct($productId)
-    {
-        $this->product = Product::find($productId);
-        $this->showAddToCart = true;
-        $this->addToCartQuantity = 1;
     }
 
     public function loadCart()
@@ -54,7 +52,7 @@ class CartComponent extends Component
         if ($cart) {
             $this->cartItems = $cart->items()->with(['product', 'product.category'])->get();
             
-            // Initialize quantity array for existing items
+            // Initialize quantity array for cart management
             foreach ($this->cartItems as $item) {
                 $this->quantity[$item->id] = $item->quantity;
             }
@@ -71,93 +69,108 @@ class CartComponent extends Component
             return $item->product->price * $item->quantity;
         });
 
-        // Calculate shipping (free shipping over $100)
         $this->shipping = $this->subtotal >= 100 ? 0 : 9.99;
-
-        // Calculate tax (8.5% tax rate)
         $this->tax = $this->subtotal * 0.085;
-
-        // Calculate total
         $this->total = $this->subtotal + $this->shipping + $this->tax;
     }
 
-    // Add to Cart Methods
-    public function increaseAddToCartQuantity()
+    // Add to cart functionality
+    public function increaseAddQuantity()
     {
         if ($this->product && $this->addToCartQuantity < $this->product->stock_quantity) {
             $this->addToCartQuantity++;
         }
     }
 
-    public function decreaseAddToCartQuantity()
+    public function decreaseAddQuantity()
     {
         if ($this->addToCartQuantity > 1) {
             $this->addToCartQuantity--;
         }
     }
 
-    public function addToCart($productId = null, $qty = null)
+    public function addToCart()
     {
         if (!Auth::check()) {
             session()->flash('error', 'Please login to add items to cart.');
-            return redirect()->route('login');
-        }
-
-        // Determine product and quantity
-        $product = $productId ? Product::find($productId) : $this->product;
-        $quantity = $qty ?? $this->addToCartQuantity;
-
-        if (!$product) {
-            session()->flash('error', 'Product not found.');
             return;
         }
 
-        if ($product->stock_quantity < $quantity) {
+        if (!$this->product || $this->product->stock_quantity < $this->addToCartQuantity) {
             session()->flash('error', 'Not enough stock available.');
             return;
         }
 
-        // Get or create cart
         $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
 
-        // Check if item already exists
         $existingItem = CartItem::where('cart_id', $cart->id)
-            ->where('product_id', $product->id)
+            ->where('product_id', $this->product->id)
             ->first();
 
         if ($existingItem) {
-            $newQuantity = $existingItem->quantity + $quantity;
-            if ($newQuantity > $product->stock_quantity) {
+            $newQuantity = $existingItem->quantity + $this->addToCartQuantity;
+            if ($newQuantity > $this->product->stock_quantity) {
                 session()->flash('error', 'Cannot add more items. Stock limit reached.');
                 return;
             }
-            $existingItem->quantity = $newQuantity;
-            $existingItem->save();
+            $existingItem->update(['quantity' => $newQuantity]);
         } else {
             CartItem::create([
                 'cart_id' => $cart->id,
-                'product_id' => $product->id,
-                'quantity' => $quantity,
+                'product_id' => $this->product->id,
+                'quantity' => $this->addToCartQuantity,
+            ]);
+        }
+
+        $this->addToCartQuantity = 1;
+        $this->loadCart();
+        session()->flash('success', 'Product added to cart successfully!');
+        $this->dispatch('cart-updated');
+    }
+
+    public function addRelatedToCart($productId)
+    {
+        if (!Auth::check()) {
+            session()->flash('error', 'Please login to add items to cart.');
+            return;
+        }
+
+        $relatedProduct = Product::find($productId);
+        if (!$relatedProduct || $relatedProduct->stock_quantity < 1) {
+            session()->flash('error', 'Product not available.');
+            return;
+        }
+
+        $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
+
+        $existingItem = CartItem::where('cart_id', $cart->id)
+            ->where('product_id', $productId)
+            ->first();
+
+        if ($existingItem) {
+            $newQuantity = $existingItem->quantity + 1;
+            if ($newQuantity > $relatedProduct->stock_quantity) {
+                session()->flash('error', 'Cannot add more items. Stock limit reached.');
+                return;
+            }
+            $existingItem->update(['quantity' => $newQuantity]);
+        } else {
+            CartItem::create([
+                'cart_id' => $cart->id,
+                'product_id' => $productId,
+                'quantity' => 1,
             ]);
         }
 
         $this->loadCart();
         session()->flash('success', 'Product added to cart successfully!');
-        
-        // Reset quantity for the add to cart form
-        $this->addToCartQuantity = 1;
-        
-        // Dispatch event for other components
         $this->dispatch('cart-updated');
     }
 
-    // Existing Cart Management Methods
+    // Cart management functionality
     public function increaseQuantity($itemId)
     {
-        if (!Auth::check()) {
-            session()->flash('error', 'Please login to manage your cart.');
-            return;
-        }
+        if (!Auth::check()) return;
 
         $item = CartItem::find($itemId);
         if ($item && $item->cart->user_id === Auth::id()) {
@@ -174,10 +187,7 @@ class CartComponent extends Component
 
     public function decreaseQuantity($itemId)
     {
-        if (!Auth::check()) {
-            session()->flash('error', 'Please login to manage your cart.');
-            return;
-        }
+        if (!Auth::check()) return;
 
         $item = CartItem::find($itemId);
         if ($item && $item->cart->user_id === Auth::id() && $item->quantity > 1) {
@@ -188,38 +198,9 @@ class CartComponent extends Component
         }
     }
 
-    public function updateQuantity($itemId)
-    {
-        if (!Auth::check()) {
-            session()->flash('error', 'Please login to manage your cart.');
-            return;
-        }
-
-        $item = CartItem::find($itemId);
-        if ($item && $item->cart->user_id === Auth::id()) {
-            $newQuantity = $this->quantity[$itemId];
-            
-            if ($newQuantity < 1) {
-                $newQuantity = 1;
-            } elseif ($newQuantity > $item->product->stock_quantity) {
-                $newQuantity = $item->product->stock_quantity;
-                session()->flash('error', 'Quantity adjusted to available stock.');
-            }
-            
-            $item->quantity = $newQuantity;
-            $item->save();
-            $this->quantity[$itemId] = $newQuantity;
-            $this->loadCart();
-            session()->flash('success', 'Item quantity updated!');
-        }
-    }
-
     public function removeItem($itemId)
     {
-        if (!Auth::check()) {
-            session()->flash('error', 'Please login to manage your cart.');
-            return;
-        }
+        if (!Auth::check()) return;
 
         $item = CartItem::find($itemId);
         if ($item && $item->cart->user_id === Auth::id()) {
@@ -233,10 +214,7 @@ class CartComponent extends Component
 
     public function clearCart()
     {
-        if (!Auth::check()) {
-            session()->flash('error', 'Please login to manage your cart.');
-            return;
-        }
+        if (!Auth::check()) return;
 
         $cart = Cart::where('user_id', Auth::id())->first();
         if ($cart) {

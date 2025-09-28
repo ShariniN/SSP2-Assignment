@@ -12,14 +12,6 @@ class Wishlist extends Model
     protected $fillable = [
         'user_id',
         'product_id',
-        'product_snapshot',
-        'added_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'added_at' => 'datetime',
-        ];
-    }
 }

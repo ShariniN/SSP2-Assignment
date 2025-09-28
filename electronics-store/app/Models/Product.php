@@ -97,4 +97,14 @@ class Product extends Model
         return $query->whereNotNull('discount_price')
                     ->whereColumn('discount_price', '<', 'price');
     }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class, 'product_id', '_id');
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(\App\Models\OrderItem::class, 'product_id');
+    }
 }

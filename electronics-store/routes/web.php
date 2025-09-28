@@ -6,8 +6,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\WishlistController; 
-use App\Http\Livewire\CartComponent;
+use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\Admin\AdminController;
 
 // ------------------- Social Login -------------------
 Route::get('/login/google', [SocialLoginController::class, 'redirectToGoogle'])->name('login.google');
@@ -28,11 +28,11 @@ Route::get('/products/search', [ProductController::class, 'search'])->name('prod
 Route::get('/products/{id}/quick-view', [ProductController::class, 'quickView'])->name('products.quick-view');
 Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
 
-// Wishlist 
-Route::middleware(['auth'])->group(function () {
+// Wishlist
+Route::middleware('auth')->group(function () {
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('/wishlist/add/{id}', [WishlistController::class, 'add'])->name('wishlist.add');
-    Route::delete('/wishlist/remove/{id}', [WishlistController::class, 'remove'])->name('wishlist.remove');
+    Route::post('/wishlist/add/{product}', [WishlistController::class, 'add'])->name('wishlist.add');
+    Route::delete('/wishlist/remove/{product}', [WishlistController::class, 'remove'])->name('wishlist.remove');
 });
 
 // ------------------- Cart (Livewire) -------------------
@@ -50,26 +50,45 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
         Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 
-        // Orders
+        // Orders for regular users
         Route::get('/orders', [CheckoutController::class, 'orders'])->name('orders.index');
         Route::get('/orders/{order}', [CheckoutController::class, 'showOrder'])->name('orders.show');
     });
 
-// ------------------- Dashboard & Admin -------------------
-Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
+// ------------------- Admin Dashboard & Management -------------------
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', \App\Http\Middleware\AdminMiddleware::class])
+    ->prefix('admin')
+    ->name('admin.')
     ->group(function () {
-        Route::get('/dashboard', function () {
-            return view('dashboard');
-        })->name('dashboard');
 
-        Route::middleware('admin')->group(function () {
-            Route::get('/admin', function () {
-                return view('admin.dashboard');
-            })->name('admin.dashboard');
+        // Dashboard
+        Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
 
-            Route::get('/admin/orders', [CheckoutController::class, 'adminOrders'])->name('admin.orders');
-            Route::patch('/admin/orders/{order}/status', [CheckoutController::class, 'updateOrderStatus'])->name('admin.orders.update-status');
-        });
+        // Products Management
+        Route::get('/products', [AdminController::class, 'products'])->name('products.index');
+        Route::post('/products', [AdminController::class, 'storeProduct'])->name('products.store');
+        Route::put('/products/{product}', [AdminController::class, 'updateProduct'])->name('products.update');
+        Route::delete('/products/{product}', [AdminController::class, 'deleteProduct'])->name('products.delete');
+
+        // Categories Management  
+        Route::get('/categories', [AdminController::class, 'categories'])->name('categories.index');
+        Route::post('/categories', [AdminController::class, 'storeCategory'])->name('categories.store');
+        Route::put('/categories/{category}', [AdminController::class, 'updateCategory'])->name('categories.update');
+        Route::delete('/categories/{category}', [AdminController::class, 'deleteCategory'])->name('categories.delete');
+
+        // Orders Management
+        Route::get('/orders', [AdminController::class, 'orders'])->name('orders.index');
+        Route::patch('/orders/{order}/status', [AdminController::class, 'updateOrderStatus'])->name('orders.update-status');
+        Route::delete('/orders/{order}', [AdminController::class, 'deleteOrder'])->name('orders.delete');
+
+        // Users Management
+        Route::get('/users', [AdminController::class, 'users'])->name('users.index');
+        Route::patch('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+        Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.delete');
+
+        // Wishlists Management
+        Route::get('/wishlists', [AdminController::class, 'wishlists'])->name('wishlists.index');
+        Route::delete('/wishlists/{user}/{product}', [AdminController::class, 'removeWishlistItem'])->name('wishlists.remove-item');
     });
 
 // ------------------- Login -------------------
@@ -79,3 +98,7 @@ Route::get('/login', [AuthenticatedSessionController::class, 'create'])
 
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])
     ->middleware('guest');
+
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('logout');

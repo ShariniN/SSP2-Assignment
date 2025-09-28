@@ -55,7 +55,7 @@
                                     <!-- Product Details -->
                                     <div class="flex-1 min-w-0">
                                         <h3 class="text-lg font-medium text-gray-900 truncate">
-                                            <a href="{{ route('product.details', $item->product->id) }}" class="hover:text-blue-600">
+                                            <a href="{{ route('product.show', $item->product->id) }}" class="hover:text-blue-600">
                                                 {{ $item->product->name }}
                                             </a>
                                         </h3>

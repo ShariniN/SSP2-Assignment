@@ -3,140 +3,192 @@
 @section('title', 'All Products - ElectroStore')
 
 @section('content')
-<div class="max-w-full px-4 sm:px-6 lg:px-8 py-12">
-
+<div class="bg-gray-50 min-h-screen">
     <!-- Page Header -->
-    <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-gray-800 mb-2">All Products</h1>
-        <p class="text-gray-600">Browse through our wide range of electronics and gadgets</p>
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center">
+                <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">All Products</h1>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Discover our complete collection of premium electronics and cutting-edge gadgets</p>
+            </div>
+        </div>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
 
-        <!-- Sidebar Categories -->
-        <aside class="lg:w-1/4">
-            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <h2 class="text-lg font-semibold mb-6 text-gray-800">Categories</h2>
-                <ul class="space-y-2">
-                    <li class="flex justify-between items-center py-1">
-                        <a href="{{ route('products.index') }}" 
-                           class="text-gray-700 hover:text-blue-600 transition duration-200 {{ !request('category') ? 'font-semibold text-blue-600' : '' }}">
-                            All Products
-                        </a>
-                        <span class="text-sm text-gray-500">{{ $products->total() ?? 0 }}</span>
-                    </li>
-                    @if(isset($categories) && $categories->count() > 0)
-                        @foreach($categories as $category)
-                            <li class="flex justify-between items-center py-1">
-                                <a href="{{ route('products.index', ['category' => $category->slug ?? $category->id]) }}" 
-                                   class="text-gray-700 hover:text-blue-600 transition duration-200 {{ request('category') == ($category->slug ?? $category->id) ? 'font-semibold text-blue-600' : '' }}">
-                                    {{ $category->name }}
-                                </a>
-                                <span class="text-sm text-gray-500">{{ $category->products_count ?? 0 }}</span>
-                            </li>
-                        @endforeach
-                    @endif
-                </ul>
-            </div>
-        </aside>
-
-        <!-- Product Grid -->
-        <main class="lg:w-3/4">
-
-            <!-- Sort Bar -->
-            <div class="flex justify-between items-center mb-6 p-4 bg-white rounded-lg shadow border border-gray-200">
-                <p class="text-gray-600">
-                    Showing <span class="font-semibold">{{ $products->firstItem() ?? 0 }}</span> to 
-                    <span class="font-semibold">{{ $products->lastItem() ?? 0 }}</span> of 
-                    <span class="font-semibold">{{ $products->total() ?? 0 }}</span> results
-                </p>
-                <form method="GET" action="{{ route('products.index') }}">
-                    <select name="sort" onchange="this.form.submit()" 
-                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Name A-Z</option>
-                        <option value="latest" {{ request('sort') == 'latest' ? 'selected' : '' }}>Latest</option>
-                        <option value="price_low" {{ request('sort') == 'price_low' ? 'selected' : '' }}>Price: Low to High</option>
-                        <option value="price_high" {{ request('sort') == 'price_high' ? 'selected' : '' }}>Price: High to Low</option>
-                    </select>
-                </form>
-            </div>
-
-            @if(isset($products) && $products->count() > 0)
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                @foreach($products as $product)
-                    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden flex flex-col min-w-0">
-                        <div class="relative w-full aspect-w-1 aspect-h-1">
-                            @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" 
-                                     alt="{{ $product->name }}" 
-                                     class="object-cover w-full h-full">
-                            @else
-                                <div class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                    <i class="fas fa-image text-4xl text-gray-400"></i>
-                                </div>
-                            @endif
-
-                            @if(isset($product->discount_price) && $product->discount_price > 0)
-                                <div class="absolute top-3 left-3">
-                                    <span class="bg-red-500 text-white px-3 py-1 rounded text-sm font-semibold">Sale</span>
-                                </div>
-                            @endif
+            <!-- Sidebar (Categories) -->
+            <aside class="lg:w-80 lg:flex-shrink-0">
+                <div class="sticky top-4 space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+                            <h2 class="text-lg font-semibold text-white flex items-center">
+                                <i class="fas fa-layer-group mr-3"></i>Categories
+                            </h2>
                         </div>
-
-                        <div class="p-4 flex flex-col gap-2 flex-1">
-                            <h3 class="font-semibold text-gray-800 line-clamp-2">{{ $product->name }}</h3>
-                            <p class="text-gray-600 text-sm line-clamp-2">{{ $product->description }}</p>
-
-                            <div class="mt-auto flex gap-2">
-                                <a href="{{ route('product.details', $product->id) }}" 
-                                   class="flex-1 bg-gray-100 text-gray-800 py-2 rounded hover:bg-gray-200 text-sm text-center">View</a>
-                                @if($product->stock_quantity > 0)
-                                    <form action="{{ route('cart.add', $product->id) }}" method="POST" class="flex-1">
-                                        @csrf
-                                        <input type="hidden" name="quantity" value="1">
-                                        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm">
-                                            <i class="fas fa-cart-plus mr-1"></i>Add
-                                        </button>
-                                    </form>
-                                @else
-                                    <button disabled class="flex-1 bg-gray-300 text-gray-500 py-2 rounded text-sm cursor-not-allowed">Out of Stock</button>
-                                @endif
-                            </div>
+                        <div class="p-6">
+                            <ul class="space-y-1">
+                                <li>
+                                    <a href="{{ route('products.index') }}" 
+                                       class="group flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 {{ !request('category') ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-200' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600' }}">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-th-large mr-3 {{ !request('category') ? 'text-blue-600' : 'text-gray-400' }}"></i>
+                                            <span>All Products</span>
+                                        </div>
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ !request('category') ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500' }}">
+                                            {{ $products->total() ?? 0 }}
+                                        </span>
+                                    </a>
+                                </li>
+                                @foreach($categories as $category)
+                                    <li>
+                                        <a href="{{ route('products.index', ['category' => $category->slug ?? $category->id]) }}" 
+                                           class="group flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 {{ request('category') == ($category->slug ?? $category->id) ? 'bg-blue-50 text-blue-700 font-semibold border border-blue-200' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600' }}">
+                                            <div class="flex items-center">
+                                                <i class="fas fa-{{ $category->icon ?? 'microchip' }} mr-3 {{ request('category') == ($category->slug ?? $category->id) ? 'text-blue-600' : 'text-gray-400' }}"></i>
+                                                <span>{{ $category->name }}</span>
+                                            </div>
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full {{ request('category') == ($category->slug ?? $category->id) ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500' }}">
+                                                {{ $category->products_count ?? 0 }}
+                                            </span>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
                         </div>
                     </div>
-                @endforeach
-            </div>
-
-            <!-- Pagination -->
-            <div class="mt-8">
-                <div class="bg-white rounded-lg shadow border border-gray-200 p-4">
-                    {{ $products->withQueryString()->links() }}
                 </div>
-            </div>
-            @else
-            <div class="bg-white rounded-lg shadow border border-gray-200 p-12 text-center">
-                <div class="max-w-md mx-auto">
-                    <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
-                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No products found</h3>
-                    <p class="text-gray-500 mb-6">We couldn't find any products. Please check back later!</p>
-                    <a href="{{ route('home') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
-                        <i class="fas fa-home mr-2"></i>Back to Home
-                    </a>
-                </div>
-            </div>
-            @endif
+            </aside>
 
-        </main>
+            <!-- Main Content -->
+            <main class="flex-1 min-w-0">
+                <!-- Sort Bar -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-search mr-2 text-gray-400"></i>
+                            <span>
+                                Showing <span class="font-semibold text-gray-900">{{ $products->firstItem() ?? 0 }}</span> to 
+                                <span class="font-semibold text-gray-900">{{ $products->lastItem() ?? 0 }}</span> of 
+                                <span class="font-semibold text-gray-900">{{ $products->total() ?? 0 }}</span> results
+                            </span>
+                        </div>
+                        <form method="GET" action="{{ route('products.index') }}" class="flex items-center gap-3">
+                            @if(request('category'))
+                                <input type="hidden" name="category" value="{{ request('category') }}">
+                            @endif
+                            <label for="sort" class="text-sm font-medium text-gray-700">Sort by:</label>
+                            <select name="sort" id="sort" onchange="this.form.submit()" 
+                                class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 focus:ring-2 focus:ring-blue-500">
+                                <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Name A-Z</option>
+                                <option value="latest" {{ request('sort') == 'latest' ? 'selected' : '' }}>Latest First</option>
+                                <option value="price_low" {{ request('sort') == 'price_low' ? 'selected' : '' }}>Price: Low to High</option>
+                                <option value="price_high" {{ request('sort') == 'price_high' ? 'selected' : '' }}>Price: High to Low</option>
+                                <option value="popular" {{ request('sort') == 'popular' ? 'selected' : '' }}>Most Popular</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+
+                @if($products->count() > 0)
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 mb-8">
+                        @foreach($products as $product)
+                            <div class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden transform hover:-translate-y-1">
+                                <!-- Product Image -->
+                                <div class="relative overflow-hidden">
+                                    @if($product->image)
+                                        <img src="{{ asset('storage/' . $product->image) }}" 
+                                             alt="{{ $product->name }}" 
+                                             class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                                    @else
+                                        <div class="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                            <i class="fas fa-image text-4xl text-gray-400"></i>
+                                        </div>
+                                    @endif
+
+                                    <!-- Badges -->
+                                    <div class="absolute top-4 left-4 flex flex-col gap-2">
+                                        @if($product->discount_price)
+                                            <span class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                                                <i class="fas fa-fire mr-1"></i>Sale
+                                            </span>
+                                        @endif
+                                        @if($product->is_featured)
+                                            <span class="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                                                <i class="fas fa-star mr-1"></i>Featured
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- Product Details -->
+                                <div class="p-6">
+                                    <h3 class="font-bold text-gray-900 mb-2 text-lg line-clamp-2">
+                                        {{ $product->name }}
+                                    </h3>
+                                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                                        {{ $product->description }}
+                                    </p>
+
+                                    <div class="mb-4">
+                                        @if($product->discount_price)
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="text-2xl font-bold text-red-600">
+                                                    ${{ number_format($product->discount_price, 2) }}
+                                                </span>
+                                                <span class="text-lg text-gray-500 line-through">
+                                                    ${{ number_format($product->price, 2) }}
+                                                </span>
+                                            </div>
+                                        @else
+                                            <span class="text-2xl font-bold text-gray-900">
+                                                ${{ number_format($product->price, 2) }}
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <!-- Buttons -->
+                                    <div class="flex gap-3">
+                                        <a href="{{ route('product.show', $product->id) }}" 
+                                           class="flex-1 bg-gray-100 text-gray-700 text-center py-3 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 text-sm">
+                                            <i class="fas fa-info-circle mr-2"></i>View Details
+                                        </a>
+                                        @auth
+                                            @if($product->stock_quantity > 0)
+                                                <button wire:click.prevent="$emit('addToCart', {{ $product->id }})"
+                                                    class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm shadow-lg">
+                                                    <i class="fas fa-cart-plus mr-2"></i>Add to Cart
+                                                </button>
+                                            @else
+                                                <button disabled class="flex-1 bg-gray-200 text-gray-400 py-3 rounded-xl text-sm">
+                                                    <i class="fas fa-times mr-2"></i>Out of Stock
+                                                </button>
+                                            @endif
+                                        @else
+                                            <a href="{{ route('login') }}" 
+                                               class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center py-3 rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 text-sm shadow-lg">
+                                                <i class="fas fa-sign-in-alt mr-2"></i>Login to Buy
+                                            </a>
+                                        @endauth
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        {{ $products->withQueryString()->links() }}
+                    </div>
+                @else
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">No Products Found</h3>
+                        <p class="text-gray-500 text-lg mb-8">Try adjusting your filters or check back later.</p>
+                        <a href="{{ route('products.index') }}" class="px-6 py-3 bg-blue-600 text-white rounded-xl">Clear Filters</a>
+                    </div>
+                @endif
+            </main>
+        </div>
     </div>
 </div>
 
-<style>
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-</style>
 @endsection

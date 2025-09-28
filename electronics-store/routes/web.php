@@ -1,13 +1,13 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\WishlistController; 
+use App\Http\Livewire\CartComponent;
 
 // ------------------- Social Login -------------------
 Route::get('/login/google', [SocialLoginController::class, 'redirectToGoogle'])->name('login.google');
@@ -24,19 +24,23 @@ Route::get('/categories/{id}', [CategoryController::class, 'showProducts'])->nam
 
 // Products
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.details');
 Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
 Route::get('/products/{id}/quick-view', [ProductController::class, 'quickView'])->name('products.quick-view');
 Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
 
-// ------------------- Cart -------------------
+// Wishlist 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/add/{id}', [WishlistController::class, 'add'])->name('wishlist.add');
+    Route::delete('/wishlist/remove/{id}', [WishlistController::class, 'remove'])->name('wishlist.remove');
+});
+
+// ------------------- Cart (Livewire) -------------------
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])
     ->group(function () {
-        Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-        Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
-        Route::patch('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
-        Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
-        Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+        Route::get('/cart', function () {
+            return view('cart-page'); // wrapper Blade file
+        })->name('cart.index');
     });
 
 // ------------------- Checkout -------------------

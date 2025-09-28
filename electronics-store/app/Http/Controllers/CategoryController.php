@@ -35,8 +35,7 @@ class CategoryController extends Controller
                           ->where('is_active', true)
                           ->with('category')
                           ->paginate(12);
-        
-        return view('categories.products', compact('category', 'products'));
+        return view('category', compact('category', 'products'));
     }
     
     /**
@@ -86,6 +85,6 @@ class CategoryController extends Controller
                           ->with('category')
                           ->paginate(12);
         
-        return view('categories.products', compact('category', 'products'));
+        return view('category', compact('category', 'products'));
     }
 }

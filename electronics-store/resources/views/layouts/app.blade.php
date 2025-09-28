@@ -3,100 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'ElectroStore')</title>
+    <title>@yield('title', 'ElectroStore - Premium Electronics & Gadgets')</title>
+    <meta name="description" content="@yield('description', 'Discover the latest tech and premium electronics at ElectroStore. Shop laptops, smartphones, headphones, gaming gear and more with free shipping and warranty.')">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Livewire Styles -->
+    @livewireStyles
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
     @stack('styles')
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 font-sans antialiased">
 
-    {{-- NAVBAR --}}
-    <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+    <!-- Navigation -->
+    <nav x-data="{ open: false, searchOpen: false }" class="bg-white shadow sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-
-                {{-- Logo --}}
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('home') }}" class="text-2xl font-bold text-gray-800">
-                        <i class="fas fa-bolt text-blue-600"></i> ElectroStore
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo -->
+                <div class="flex items-center space-x-4">
+                    <a href="{{ route('home') }}" class="flex items-center space-x-2 group">
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-xl group-hover:scale-105 transition-transform">
+                            <i class="fas fa-bolt text-white text-xl"></i>
+                        </div>
+                        <div class="hidden sm:block">
+                            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                ElectroStore
+                            </h1>
+                            <p class="text-xs text-gray-500 -mt-1">Electronics & Gadgets</p>
+                        </div>
                     </a>
                 </div>
 
-                {{-- Links --}}
-                <div class="hidden space-x-8 sm:flex sm:ms-10">
-                    <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
+                <!-- Desktop Menu -->
+                <div class="hidden lg:flex items-center space-x-2">
+                    <x-nav-link href="{{ route('products.index') }}" :active="request()->routeIs('products.*')">
+                        <i class="fas fa-th-large mr-2"></i>All Products
                     </x-nav-link>
-                    <x-nav-link href="{{ route('cart.index') }}" :active="request()->routeIs('cart.index')">
-                        {{ __('Cart') }}
-                        @if(isset($cartCount) && $cartCount > 0)
-                            <span class="ml-1 text-red-500 font-bold">({{ $cartCount }})</span>
-                        @endif
-                    </x-nav-link>
-                    @if(Auth::check() && Auth::user()->role === 'admin')
-                        <x-nav-link href="{{ route('admin.dashboard') }}" :active="request()->routeIs('admin.dashboard')">
-                            {{ __('Admin') }}
-                        </x-nav-link>
-                    @endif
+                    <!-- Categories Dropdown -->
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center transition">
+                            <i class="fas fa-layer-group mr-2"></i>Categories
+                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-transition class="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
+                            <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                <i class="fas fa-laptop mr-3 text-blue-500"></i>Laptops & Computers
+                            </a>
+                            <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                <i class="fas fa-mobile-alt mr-3 text-green-500"></i>Smartphones
+                            </a>
+                            <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                <i class="fas fa-headphones mr-3 text-purple-500"></i>Audio & Headphones
+                            </a>
+                            <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                <i class="fas fa-gamepad mr-3 text-red-500"></i>Gaming
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
-                {{-- User Dropdown / Auth Links --}}
-                <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <!-- Search -->
+                <div class="hidden md:flex flex-1 max-w-lg mx-8">
+                    <div class="relative w-full">
+                        <input type="text" placeholder="Search for products..."
+                               class="w-full px-4 py-3 pl-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Actions -->
+                <div class="flex items-center space-x-4">
+                    <!-- Mobile Search -->
+                    <button @click="searchOpen = !searchOpen" class="md:hidden p-2 text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-search text-lg"></i>
+                    </button>
+
+                    <!-- Wishlist -->
                     @auth
-                        <x-dropdown align="right" width="48">
-                            <x-slot name="trigger">
-                                <button class="inline-flex items-center px-3 py-2 border text-sm rounded-md text-gray-500 bg-white hover:text-gray-700">
-                                    {{ Auth::user()->name }}
-                                    <svg class="ms-2 -me-0.5 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
-                                    </svg>
-                                </button>
-                            </x-slot>
-                            <x-slot name="content">
-                                <x-dropdown-link href="{{ route('profile.show') }}">{{ __('Profile') }}</x-dropdown-link>
-                                <div class="border-t border-gray-200"></div>
-                                <form method="POST" action="{{ route('logout') }}" x-data>
+                        <button class="relative p-2 text-gray-600 hover:text-blue-600" onclick="toggleWishlist()">
+                            <i class="fas fa-heart text-lg"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                        </button>
+                    @endauth
+
+                    <!-- Cart -->
+                    <a href="{{ route('cart.index') }}" class="relative p-2 text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-shopping-cart text-lg"></i>
+                        <span class="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {{ session('cart') ? count(session('cart')) : 0 }}
+                        </span>
+                    </a>
+
+                    <!-- Admin -->
+                    @if(Auth::check() && Auth::user()->role === 'admin')
+                        <a href="{{ route('admin.dashboard') }}" class="hidden lg:flex items-center px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-medium">
+                            <i class="fas fa-cog mr-2"></i>Admin
+                        </a>
+                    @endif
+
+                    <!-- User -->
+                    @auth
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" class="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition">
+                                <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                </div>
+                                <span class="hidden sm:block font-medium">{{ Str::limit(Auth::user()->name, 10) }}</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
+                                <div class="px-4 py-3 border-b border-gray-100">
+                                    <p class="font-medium text-gray-900">{{ Auth::user()->name }}</p>
+                                    <p class="text-sm text-gray-500">{{ Auth::user()->email }}</p>
+                                </div>
+                                <a href="{{ route('profile.show') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                    <i class="fas fa-user mr-3"></i>Profile Settings
+                                </a>
+                                <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <x-dropdown-link href="{{ route('logout') }}" @click.prevent="$root.submit();">{{ __('Log Out') }}</x-dropdown-link>
+                                    <button type="submit" class="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600">
+                                        <i class="fas fa-sign-out-alt mr-3"></i>Sign Out
+                                    </button>
                                 </form>
-                            </x-slot>
-                        </x-dropdown>
+                            </div>
+                        </div>
                     @else
-                        <div class="flex space-x-4">
-                            <a href="{{ route('login') }}" class="text-sm text-gray-600 hover:text-gray-900">Login</a>
-                            <a href="{{ route('register') }}" class="text-sm text-gray-600 hover:text-gray-900">Register</a>
+                        <div class="flex items-center space-x-2">
+                            <a href="{{ route('login') }}" class="px-4 py-2 text-gray-700 hover:text-blue-600 font-medium">Sign In</a>
+                            <a href="{{ route('register') }}" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Sign Up</a>
                         </div>
                     @endauth
-                </div>
 
-                {{-- Hamburger --}}
-                <div class="-me-2 flex items-center sm:hidden">
-                    <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100">
-                        <svg class="size-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                            <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                            <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
+                    <!-- Mobile menu toggle -->
+                    <button @click="open = !open" class="lg:hidden p-2 text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-bars text-lg"></i>
                     </button>
                 </div>
-
             </div>
-        </div>
 
-        {{-- Responsive Menu --}}
-        <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-            <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">{{ __('Dashboard') }}</x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('cart.index') }}" :active="request()->routeIs('cart.index')">{{ __('Cart') }}</x-responsive-nav-link>
-            @if(Auth::check() && Auth::user()->role === 'admin')
-                <x-responsive-nav-link href="{{ route('admin.dashboard') }}" :active="request()->routeIs('admin.dashboard')">{{ __('Admin') }}</x-responsive-nav-link>
-            @endif
+            <!-- Mobile Search -->
+            <div x-show="searchOpen" x-transition class="md:hidden px-4 pb-4">
+                <input type="text" placeholder="Search for products..." class="w-full px-4 py-3 pl-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
         </div>
     </nav>
 
-    {{-- MAIN CONTENT --}}
-    <main class="py-6">
+    <!-- Main Content -->
+    <main class="min-h-screen">
         @yield('content')
     </main>
 
+    <!-- Footer -->
+    <x-footer />
+
+    <!-- Back to Top -->
+    <button id="back-to-top" class="fixed bottom-8 right-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-full shadow-lg hover:scale-110 transform hidden z-40">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Livewire Scripts -->
+    @livewireScripts
+
     @stack('scripts')
+
+    <script>
+        // Back to top
+        const backToTop = document.getElementById('back-to-top');
+        window.addEventListener('scroll', () => {
+            backToTop.classList.toggle('hidden', window.pageYOffset < 300);
+        });
+        backToTop.addEventListener('click', () => window.scrollTo({top: 0, behavior: 'smooth'}));
+
+        // Wishlist toggle (example)
+        function toggleWishlist() {
+            showToast('Toggled wishlist!', 'success');
+        }
+
+        // Toast
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-transform transform translate-x-full ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
+    </script>
 </body>
 </html>

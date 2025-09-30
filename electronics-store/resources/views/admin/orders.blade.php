@@ -22,7 +22,6 @@
     </div>
 </div>
 
-<!-- Success/Error Messages -->
 @if(session('success'))
 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
     {{ session('success') }}
@@ -35,7 +34,6 @@
 </div>
 @endif
 
-<!-- Orders Table -->
 <div class="bg-white shadow overflow-hidden rounded-lg">
     <div class="px-6 py-4 border-b border-gray-200">
         <h3 class="text-lg font-medium text-gray-900">All Orders ({{ $orders->total() }})</h3>
@@ -87,18 +85,20 @@
                         {{ $order->created_at->format('M d, Y') }}
                         <div class="text-xs text-gray-400">{{ $order->created_at->format('H:i A') }}</div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="viewOrder({{ $order->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3" title="View Details">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2">
+                        <button onclick="viewOrder({{ $order->id }})" class="text-indigo-600 hover:text-indigo-900" title="View Details">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button onclick="updateStatus({{ $order->id }}, '{{ $order->status }}')" class="text-green-600 hover:text-green-900 mr-3" title="Update Status">
+                        <button onclick="updateStatus({{ $order->id }}, '{{ $order->status }}')" class="text-green-600 hover:text-green-900" title="Update Status">
                             <i class="fas fa-edit"></i>
                         </button>
-                        @if($order->status === 'cancelled')
-                        <button onclick="deleteOrder({{ $order->id }})" class="text-red-600 hover:text-red-900" title="Delete Order">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        @endif
+                        <form method="POST" action="{{ route('admin.orders.delete', $order) }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" onclick="return confirm('Are you sure?')" class="text-red-600 hover:text-red-900" title="Delete Order">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 @empty
@@ -112,7 +112,6 @@
         </table>
     </div>
     
-    <!-- Pagination -->
     <div class="px-6 py-4 border-t border-gray-200">
         {{ $orders->links() }}
     </div>
@@ -128,10 +127,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
-            <div id="orderDetails" class="space-y-4">
-                <!-- Order details will be loaded here -->
-            </div>
+            <div id="orderDetails" class="space-y-4"></div>
         </div>
     </div>
 </div>
@@ -180,10 +176,9 @@ const orderModal = document.getElementById('orderModal');
 const statusModal = document.getElementById('statusModal');
 const statusForm = document.getElementById('statusForm');
 
-// View Order Details
 function viewOrder(id) {
-    fetch(`/admin/orders/${id}`)
-        .then(response => response.json())
+    fetch(`/admin/orders/${id}/json`)
+        .then(res => res.json())
         .then(order => {
             document.getElementById('orderModalTitle').textContent = `Order #${order.id} Details`;
             
@@ -202,12 +197,10 @@ function viewOrder(id) {
                         <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
                     </div>
                 </div>
-                
                 <div class="mt-4">
                     <h4 class="font-medium text-gray-900 mb-2">Shipping Address</h4>
                     <p>${order.shipping_address || 'No shipping address provided'}</p>
                 </div>
-                
                 <div class="mt-4">
                     <h4 class="font-medium text-gray-900 mb-2">Order Items</h4>
                     <div class="space-y-2">
@@ -231,35 +224,15 @@ function viewOrder(id) {
             document.getElementById('orderDetails').innerHTML = detailsHTML;
             orderModal.classList.remove('hidden');
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error loading order details');
-        });
+        .catch(() => alert('Error loading order details'));
 }
 
-// Update Status
 function updateStatus(id, currentStatus) {
     statusForm.action = `/admin/orders/${id}/status`;
     document.getElementById('orderStatus').value = currentStatus;
     statusModal.classList.remove('hidden');
 }
 
-// Delete Order
-function deleteOrder(id) {
-    if (confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/orders/${id}`;
-        form.innerHTML = `
-            @csrf
-            @method('DELETE')
-        `;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-// Helper function for status classes
 function getStatusClass(status) {
     const classes = {
         pending: 'bg-yellow-100 text-yellow-800',
@@ -271,30 +244,11 @@ function getStatusClass(status) {
     return classes[status] || 'bg-gray-100 text-gray-800';
 }
 
-// Close Modals
-document.getElementById('closeOrderModal').addEventListener('click', () => {
-    orderModal.classList.add('hidden');
-});
-
-document.getElementById('closeStatusModal').addEventListener('click', () => {
-    statusModal.classList.add('hidden');
-});
-
-document.getElementById('cancelStatusBtn').addEventListener('click', () => {
-    statusModal.classList.add('hidden');
-});
-
-// Close modals when clicking outside
-orderModal.addEventListener('click', function(e) {
-    if (e.target === orderModal) {
-        orderModal.classList.add('hidden');
-    }
-});
-
-statusModal.addEventListener('click', function(e) {
-    if (e.target === statusModal) {
-        statusModal.classList.add('hidden');
-    }
-});
+// Close modals
+document.getElementById('closeOrderModal').addEventListener('click', () => orderModal.classList.add('hidden'));
+document.getElementById('closeStatusModal').addEventListener('click', () => statusModal.classList.add('hidden'));
+document.getElementById('cancelStatusBtn').addEventListener('click', () => statusModal.classList.add('hidden'));
+orderModal.addEventListener('click', e => { if(e.target === orderModal) orderModal.classList.add('hidden'); });
+statusModal.addEventListener('click', e => { if(e.target === statusModal) statusModal.classList.add('hidden'); });
 </script>
 @endsection

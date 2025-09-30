@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
+    // ------------------- Dashboard -------------------
     public function dashboard()
     {
         $stats = [
@@ -26,15 +27,59 @@ class AdminController extends Controller
             'pending_orders' => Order::where('status', 'pending')->count(),
             'recent_orders' => Order::with('user')->latest()->take(5)->get(),
             'top_products' => Product::withCount('orderItems')
-            ->orderBy('order_items_count', 'desc')
-            ->take(5)
-            ->get(),
+                ->orderBy('order_items_count', 'desc')
+                ->take(5)
+                ->get(),
         ];
 
         return view('admin.dashboard', compact('stats'));
     }
 
-    // Products Management
+    // ------------------- Wishlists -------------------
+    public function indexWishlists(Request $request)
+    {
+        $userIds = Wishlist::distinct('user_id')->get()->pluck('user_id');
+
+        $users = User::whereIn('id', $userIds)->latest()->paginate(15);
+
+        $users->getCollection()->transform(function ($user) {
+            $user->wishlist_count = Wishlist::where('user_id', $user->id)->count();
+            return $user;
+        });
+
+        return view('admin.wishlists', compact('users'));
+    }
+
+    public function getWishlistJson(User $user)
+    {
+        $wishlistItems = Wishlist::where('user_id', $user->id)->get();
+
+        $wishlistItems->transform(function ($item) {
+            $item->product = Product::find($item->product_id);
+            return $item;
+        });
+
+        return response()->json([
+            'user' => $user,
+            'wishlist' => $wishlistItems,
+        ]);
+    }
+
+    public function removeWishlistItem(User $user, $productId)
+    {
+        $item = Wishlist::where('user_id', $user->id)
+                        ->where('product_id', $productId)
+                        ->first();
+
+        if ($item) {
+            $item->delete();
+            return redirect()->back()->with('success', 'Item removed from wishlist successfully.');
+        }
+
+        return redirect()->back()->with('error', 'Item not found in wishlist.');
+    }
+
+    // ------------------- Products -------------------
     public function products()
     {
         $products = Product::with(['category', 'brand'])->latest()->paginate(15);
@@ -75,55 +120,140 @@ class AdminController extends Controller
 
     public function updateProduct(Request $request, Product $product)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
-            'stock_quantity' => 'required|integer|min:0',
+            'sku' => 'nullable|string|max:100',
             'category_id' => 'required|exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
-            'sku' => 'nullable|string|unique:products,sku,' . $product->id,
+            'price' => 'required|numeric',
+            'discount_price' => 'nullable|numeric',
+            'stock_quantity' => 'required|integer',
+            'description' => 'required|string',
+            'specifications' => 'nullable|string',
+            'is_active' => 'nullable',
+            'is_featured' => 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'specifications' => 'nullable|json',
-            'is_active' => 'boolean',
-            'is_featured' => 'boolean'
         ]);
 
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
-        $data['is_featured'] = $request->has('is_featured');
+        $validated['is_active'] = $request->has('is_active');
+        $validated['is_featured'] = $request->has('is_featured');
+
+        if (!empty($validated['specifications'])) {
+            $decoded = json_decode($validated['specifications'], true);
+            $validated['specifications'] = $decoded ?? [];
+        } else {
+            $validated['specifications'] = [];
+        }
 
         if ($request->hasFile('image')) {
             if ($product->image) {
                 Storage::disk('public')->delete($product->image);
             }
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $validated['image'] = $request->file('image')->store('products', 'public');
         }
 
-        $product->update($data);
+        $product->update($validated);
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
     }
 
     public function deleteProduct(Product $product)
     {
-        $hasOrders = OrderItem::where('product_id', $product->id)->exists();
-        
-        if ($hasOrders) {
+        if (OrderItem::where('product_id', $product->id)->exists()) {
             return redirect()->route('admin.products.index')->with('error', 'Cannot delete product with existing orders.');
         }
 
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }
-        
+
         $product->delete();
 
         return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
     }
 
-    // Categories Management
+    public function showProduct(Product $product)
+    {
+        $product->load('category', 'brand');
+        return response()->json($product);
+    }
+
+    // ------------------- Users -------------------
+    public function indexUsers(Request $request)
+    {
+        $query = User::withCount('orders')->where('is_admin', false);
+
+        if ($request->status === 'active') {
+            $query->whereNull('banned_at');
+        } elseif ($request->status === 'banned') {
+            $query->whereNotNull('banned_at');
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+        return view('admin.users', compact('users'));
+    }
+
+    public function getUserJson(User $user)
+    {
+        $user->load('orders');
+        return response()->json($user);
+    }
+
+    public function toggleUserStatus(User $user)
+    {
+        $user->banned_at = $user->banned_at ? null : now();
+        $user->save();
+
+        return redirect()->back()->with('success', 'User status updated.');
+    }
+
+    public function destroyUser(User $user)
+    {
+        if ($user->orders()->count() > 0) {
+            return redirect()->back()->with('error', 'Cannot delete a user with orders.');
+        }
+
+        $user->delete();
+        return redirect()->back()->with('success', 'User deleted successfully.');
+    }
+
+    // ------------------- Orders -------------------
+    public function orders()
+    {
+        $orders = Order::with(['user', 'items.product'])->latest()->paginate(15);
+        return view('admin.orders', compact('orders'));
+    }
+
+    public function showOrder(Order $order)
+    {
+        $order->load(['user', 'items.product']);
+        return view('admin.orders.show', compact('order'));
+    }
+
+    public function getOrderJson(Order $order)
+    {
+        $order->load('user', 'items.product');
+        return response()->json($order);
+    }
+
+    public function updateOrderStatus(Request $request, Order $order)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+        ]);
+        $order->status = $request->status;
+        $order->save();
+
+        return redirect()->back()->with('success', 'Order status updated successfully.');
+    }
+
+    public function deleteOrder(Order $order)
+    {
+        $order->delete();
+        return redirect()->back()->with('success', 'Order deleted successfully.');
+    }
+
+    // ------------------- Categories -------------------
     public function categories()
     {
         $categories = Category::withCount('products')->latest()->paginate(15);
@@ -167,117 +297,17 @@ class AdminController extends Controller
         if ($category->products()->count() > 0) {
             return redirect()->route('admin.categories.index')->with('error', 'Cannot delete category with existing products.');
         }
-        
-        $category->delete();
 
+        $category->delete();
         return redirect()->route('admin.categories.index')->with('success', 'Category deleted successfully.');
     }
 
-    // Orders Management
-    public function orders()
+    public function getCategoryJson(Category $category)
     {
-        $orders = Order::with(['user', 'items'])->latest()->paginate(15);
-        return view('admin.orders', compact('orders'));
+        return response()->json($category);
     }
 
-    public function showOrder(Order $order)
-    {
-        $order->load(['user', 'items.product']);
-        return view('admin.orders.show', compact('order'));
-    }
-
-    public function updateOrderStatus(Request $request, Order $order)
-    {
-        $request->validate([
-            'status' => 'required|in:pending,processing,shipped,delivered,cancelled,completed'
-        ]);
-
-        $order->update([
-            'status' => $request->status
-        ]);
-
-        return redirect()->back()->with('success', 'Order status updated successfully.');
-    }
-
-    public function deleteOrder(Order $order)
-    {
-        if (!in_array($order->status, ['cancelled', 'completed'])) {
-            return redirect()->route('admin.orders.index')->with('error', 'Only cancelled or completed orders can be deleted.');
-        }
-
-        $order->delete();
-
-        return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
-    }
-
-    // Users Management
-    public function users()
-    {
-        $users = User::where('is_admin', false)->latest()->paginate(15);
-        return view('admin.users', compact('users'));
-    }
-
-    public function toggleUserStatus(User $user)
-    {
-        if ($user->banned_at) {
-            $user->update(['banned_at' => null]);
-            $message = 'User activated successfully.';
-        } else {
-            $user->update(['banned_at' => now()]);
-            $message = 'User banned successfully.';
-        }
-
-        return redirect()->back()->with('success', $message);
-    }
-
-    public function deleteUser(User $user)
-    {
-        if ($user->orders()->count() > 0) {
-            return redirect()->route('admin.users.index')->with('error', 'Cannot delete user with existing orders.');
-        }
-
-        $user->delete();
-
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
-    }
-
-    // Wishlists Management
-    public function wishlists()
-    {
-        // Get users who have wishlist items
-        $users = User::whereHas('wishlist')
-                    ->withCount('wishlist')
-                    ->latest()
-                    ->paginate(15);
-
-        return view('admin.wishlists', compact('users'));
-    }
-
-    public function showUserWishlist(User $user)
-    {
-        $wishlistItems = Wishlist::where('user_id', $user->id)
-                                ->with('product')
-                                ->latest()
-                                ->paginate(15);
-
-        return view('admin.wishlists.show', compact('user', 'wishlistItems'));
-    }
-
-    public function removeWishlistItem(User $user, $productId)
-    {
-        $wishlist = Wishlist::where('user_id', $user->id)
-                           ->where('product_id', $productId)
-                           ->first();
-
-        if ($wishlist) {
-            $wishlist->delete();
-            return redirect()->back()->with('success', 'Item removed from wishlist successfully.');
-        }
-
-        return redirect()->back()->with('error', 'Item not found in wishlist.');
-    }
-
-    // Brands Management (if Brand model exists)
+    // ------------------- Brands -------------------
     public function brands()
     {
         $brands = Brand::withCount('products')->latest()->paginate(15);
@@ -338,7 +368,7 @@ class AdminController extends Controller
         if ($brand->image) {
             Storage::disk('public')->delete($brand->image);
         }
-        
+
         $brand->delete();
 
         return redirect()->route('admin.brands.index')->with('success', 'Brand deleted successfully.');

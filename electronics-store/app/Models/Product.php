@@ -100,7 +100,7 @@ class Product extends Model
 
     public function wishlists()
     {
-        return $this->hasMany(Wishlist::class, 'product_id', '_id');
+        return $this->hasMany(Wishlist::class, 'product_id', 'id');
     }
 
     public function orderItems()

@@ -127,7 +127,8 @@
             
             <form id="productForm" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" id="productId" name="_method" value="">
+                <input type="hidden" name="_method" id="formMethod" value="">
+                <input type="hidden" id="productId" value="">
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -223,11 +224,12 @@ const productModal = document.getElementById('productModal');
 const productForm = document.getElementById('productForm');
 const modalTitle = document.getElementById('modalTitle');
 const submitText = document.getElementById('submitText');
+const formMethod = document.getElementById('formMethod');
 
 // Add Product
 document.getElementById('addProductBtn').addEventListener('click', function() {
     productForm.action = "{{ route('admin.products.store') }}";
-    productForm.querySelector('[name="_method"]').value = '';
+    formMethod.value = ''; // default POST
     modalTitle.textContent = 'Add Product';
     submitText.textContent = 'Add Product';
     productForm.reset();
@@ -240,7 +242,7 @@ function editProduct(id) {
         .then(response => response.json())
         .then(product => {
             productForm.action = `/admin/products/${id}`;
-            productForm.querySelector('[name="_method"]').value = 'PUT';
+            formMethod.value = 'PUT';
             modalTitle.textContent = 'Edit Product';
             submitText.textContent = 'Update Product';
             
@@ -248,7 +250,9 @@ function editProduct(id) {
             document.getElementById('productName').value = product.name;
             document.getElementById('productSku').value = product.sku || '';
             document.getElementById('productCategory').value = product.category_id;
-            document.getElementById('productBrand').value = product.brand_id || '';
+            if(document.getElementById('productBrand')) {
+                document.getElementById('productBrand').value = product.brand_id || '';
+            }
             document.getElementById('productPrice').value = product.price;
             document.getElementById('productDiscountPrice').value = product.discount_price || '';
             document.getElementById('productStock').value = product.stock_quantity;

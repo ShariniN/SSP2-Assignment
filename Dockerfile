@@ -53,22 +53,27 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progre
 RUN npm install && npm run build
 
 # -------------------------------
-# Fix permissions
+# Fix permissions (Laravel specific)
 # -------------------------------
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/public \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # -------------------------------
 # Update Apache config to serve /public
 # -------------------------------
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf \
-    && sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/apache2.conf
+    && sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/apache2.conf \
+    && echo '<Directory /var/www/html/public>\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>' >> /etc/apache2/apache2.conf
 
 # -------------------------------
 # Make Apache listen on Railway's PORT
 # -------------------------------
 ENV PORT 8080
-RUN sed -i "s/80/${PORT}/g" /etc/apache2/ports.conf
+RUN sed -i "s/80/${PORT}/g" /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
 EXPOSE ${PORT}
 
 # -------------------------------

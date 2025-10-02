@@ -43,16 +43,7 @@ RUN composer dump-autoload --optimize --classmap-authoritative
 # -------------------------------
 FROM php:8.2-apache
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcurl4 \
-    libpng16-16 \
-    libonig5 \
-    libzip4t64 \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install PHP extensions
+# Install PHP extensions (this will pull in necessary runtime libraries)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     pkg-config \

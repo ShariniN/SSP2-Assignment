@@ -12,6 +12,14 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Models\Wishlist;
 use App\Models\Product;
 
+Route::get('/test-csrf', function () {
+    return [
+        'csrf_token' => csrf_token(),
+        'session_id' => session()->getId(),
+        'session_works' => session()->has('_token'),
+    ];
+});
+
 
 // ------------------- Social Login -------------------
 Route::get('/auth/google', [SocialLoginController::class, 'redirectToGoogle'])->name('login.google');

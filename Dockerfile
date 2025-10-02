@@ -48,7 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4 \
     libpng16-16 \
     libonig5 \
-    libzip4 \
+    libzip4t64 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 

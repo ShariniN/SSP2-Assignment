@@ -23,7 +23,7 @@ class Cart extends Model
     }
     
     /**
-     * Get the user that owns the cart (if authenticated)
+     * Get the user that owns the cart 
      */
     public function user()
     {

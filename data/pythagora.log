@@ -1,0 +1,64 @@
+2025-10-02T04:56:14.003Z INFO SharedStateManager initialized
+2025-10-02T04:56:14.004Z INFO Is remote: false
+2025-10-02T04:56:14.004Z INFO Starting Local. Installation path: undefined
+2025-10-02T04:56:14.005Z INFO [MainProvider] Creating new MainProvider instance...
+2025-10-02T04:56:14.007Z INFO Installation path exists: c:\SSP2 Assignment\electronics-store
+2025-10-02T04:56:14.008Z INFO Initializing database with URL: file:C:\Users\User\AppData\Local\Temp\pythagora-temp\pythagora.db
+2025-10-02T04:56:14.014Z INFO [c:\Users\User\.vscode\extensions\pythagoratechnologies.pythagora-vs-code-2.5.11] Project root:
+2025-10-02T04:56:14.015Z INFO [c:\Users\User\.vscode\extensions\pythagoratechnologies.pythagora-vs-code-2.5.11\prisma\schema.prisma] Schema path:
+2025-10-02T04:56:14.016Z INFO [file:C:\Users\User\AppData\Local\Temp\pythagora-temp\pythagora.db] Database URL:
+2025-10-02T04:56:14.016Z INFO [true] Schema exists:
+2025-10-02T04:56:14.017Z INFO Running prisma generate first...
+2025-10-02T04:56:35.632Z INFO [Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (6.16.3) to .\src\generated\prisma in 388ms
+
+] Prisma generate result:
+2025-10-02T04:56:35.633Z INFO Running prisma db push to sync schema...
+2025-10-02T04:56:38.308Z INFO [Prisma schema loaded from prisma\schema.prisma
+Datasource "db": SQLite database "pythagora.db" at "file:C:\Users\User\AppData\Local\Temp\pythagora-temp\pythagora.db"
+
+The database is already in sync with the Prisma schema.
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (6.16.3) to .\src\generated\prisma in 403ms
+
+] Prisma db push result:
+2025-10-02T04:56:38.309Z INFO Database initialized successfully
+2025-10-02T04:56:38.313Z INFO [Migration] Checking for database migration...
+2025-10-02T04:56:40.103Z INFO [Migration] No migration needed
+2025-10-02T05:01:20.960Z INFO resplitScreen: Setting up editor layout...
+2025-10-02T05:01:20.960Z INFO resplitScreen: Current tab groups: 1
+2025-10-02T05:01:20.961Z INFO resplitScreen: Splitting editor to create 2 groups
+2025-10-02T05:01:21.179Z INFO resplitScreen: Setting up editor layout...
+2025-10-02T05:01:21.180Z INFO resplitScreen: Current tab groups: 2
+2025-10-02T05:01:21.911Z INFO resplitScreen: Setting up editor layout...
+2025-10-02T05:01:21.912Z INFO resplitScreen: Current tab groups: 2
+2025-10-02T05:01:21.914Z INFO resplitScreen: Focused second editor group
+2025-10-02T05:01:21.919Z INFO MainProvider handleMessage {"type":"codeScreenActivated","activeScreen":"code","reason":"file_opened","route":"forwardToLeft","source":"tabsManager"}
+2025-10-02T05:01:22.013Z INFO resplitScreen: Focused second editor group
+2025-10-02T05:01:22.015Z INFO MainProvider handleMessage {"type":"codeScreenActivated","activeScreen":"code","reason":"file_opened","route":"forwardToLeft","source":"tabsManager"}
+2025-10-02T05:01:22.016Z INFO resplitScreen: Focused second editor group
+2025-10-02T05:01:22.018Z INFO MainProvider handleMessage {"type":"codeScreenActivated","activeScreen":"code","reason":"file_opened","route":"forwardToLeft","source":"tabsManager"}
+2025-10-02T05:01:31.460Z INFO MainProvider handleMessage {"command":"centerBarReady","data":{},"source":"center"}
+2025-10-02T05:01:31.462Z INFO Center panel message: {"command":"centerBarReady","data":{},"source":"center"}
+2025-10-02T05:01:31.464Z INFO MainProvider handleMessage {"command":"ready","data":"ready","source":"center"}
+2025-10-02T05:01:31.464Z INFO Center panel message: {"command":"ready","data":"ready","source":"center"}
+2025-10-02T05:01:31.465Z INFO [MainProvider] Center panel ready - processing ready handler
+2025-10-02T05:01:31.466Z INFO [MainProvider] Center panel ready - flushing 0 buffered messages
+2025-10-02T05:01:31.467Z INFO [Message Router] Routing getProjectInfo through unified router
+2025-10-02T05:01:31.520Z INFO MainProvider handleMessage {"command":"centerBarReady","data":{},"source":"center"}
+2025-10-02T05:01:31.521Z INFO Center panel message: {"command":"centerBarReady","data":{},"source":"center"}
+2025-10-02T05:01:31.521Z INFO MainProvider handleMessage {"command":"ready","data":"ready","source":"center"}
+2025-10-02T05:01:31.522Z INFO Center panel message: {"command":"ready","data":"ready","source":"center"}
+2025-10-02T05:01:31.523Z INFO [MainProvider] Center panel ready - processing ready handler
+2025-10-02T05:01:31.523Z INFO [MainProvider] Center panel ready - flushing 0 buffered messages
+2025-10-02T05:01:31.524Z INFO [Message Router] Routing getProjectInfo through unified router
+2025-10-02T05:01:31.631Z INFO MainProvider handleMessage {"command":"centerBarReady","data":{},"source":"center"}
+2025-10-02T05:01:31.632Z INFO Center panel message: {"command":"centerBarReady","data":{},"source":"center"}
+2025-10-02T05:01:31.634Z INFO MainProvider handleMessage {"command":"ready","data":"ready","source":"center"}
+2025-10-02T05:01:31.635Z INFO Center panel message: {"command":"ready","data":"ready","source":"center"}
+2025-10-02T05:01:31.636Z INFO [MainProvider] Center panel ready - processing ready handler
+2025-10-02T05:01:31.637Z INFO [MainProvider] Center panel ready - flushing 0 buffered messages
+2025-10-02T05:01:31.638Z INFO [Message Router] Routing getProjectInfo through unified router

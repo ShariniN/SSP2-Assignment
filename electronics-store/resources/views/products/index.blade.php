@@ -97,7 +97,7 @@
                                 <!-- Product Image -->
                                 <div class="relative overflow-hidden">
                                     @if($product->image_url)
-                                        <img src="{{ asset('storage/' . $product->image_url) }}" 
+                                        <img src="{{ asset($product->image_url) }}" 
                                              alt="{{ $product->name }}" 
                                              class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
                                     @else

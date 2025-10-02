@@ -16,21 +16,29 @@ class WishlistController extends Controller
                 return redirect()->route('login');
             }
 
-            // Get wishlist items from MongoDB
-            $wishlistItems = Wishlist::where('user_id', Auth::id())->get();
+            // Get wishlist items from MongoDB - convert user_id to string
+            $wishlistItems = Wishlist::where('user_id', (string)Auth::id())->get();
             
-            // Manually load products from MongoDB
+            // Manually load products from MySQL
             $items = collect();
             foreach ($wishlistItems as $wishlistItem) {
                 try {
-                    $product = Product::find($wishlistItem->product_id);
+                    // Convert product_id string to integer for MySQL query
+                    $productId = is_string($wishlistItem->product_id) 
+                        ? (int)trim($wishlistItem->product_id, '"') 
+                        : (int)$wishlistItem->product_id;
+                    
+                    $product = Product::find($productId);
+                    
                     if ($product) {
                         // Add product data to the wishlist item
                         $wishlistItem->product = $product;
                         $items->push($wishlistItem);
+                    } else {
+                        Log::warning("Product not found for wishlist item. Product ID: " . $productId);
                     }
                 } catch (\Exception $e) {
-                    Log::warning("Product not found for wishlist item: " . $wishlistItem->product_id);
+                    Log::warning("Error loading product for wishlist item: " . $e->getMessage());
                 }
             }
 
@@ -49,15 +57,22 @@ class WishlistController extends Controller
                 return redirect()->route('login');
             }
 
+            // Store user_id and product_id as strings for consistency
+            $userId = (string)Auth::id();
+            $productIdString = (string)$productId;
+
             // Check if already exists
-            $exists = Wishlist::where('user_id', Auth::id())
-                             ->where('product_id', $productId)
+            $exists = Wishlist::where('user_id', $userId)
+                             ->where(function($query) use ($productIdString) {
+                                 $query->where('product_id', $productIdString)
+                                       ->orWhere('product_id', '"' . $productIdString . '"');
+                             })
                              ->exists();
 
             if (!$exists) {
                 Wishlist::create([
-                    'user_id' => Auth::id(),
-                    'product_id' => $productId,
+                    'user_id' => $userId,
+                    'product_id' => $productIdString, // Store as string without quotes
                 ]);
             }
 
@@ -76,8 +91,16 @@ class WishlistController extends Controller
                 return redirect()->route('login');
             }
 
-            Wishlist::where('user_id', Auth::id())
-                    ->where('product_id', $productId)
+            $userId = (string)Auth::id();
+            $productIdString = (string)$productId;
+
+            // Try multiple formats to ensure deletion
+            Wishlist::where('user_id', $userId)
+                    ->where(function($query) use ($productIdString) {
+                        $query->where('product_id', $productIdString)
+                              ->orWhere('product_id', '"' . $productIdString . '"')
+                              ->orWhere('product_id', (int)$productIdString);
+                    })
                     ->delete();
 
             return back()->with('success', 'Product removed from wishlist!');

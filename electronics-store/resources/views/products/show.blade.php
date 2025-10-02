@@ -59,7 +59,7 @@
                             <div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden shadow-lg">
                                 @if($product->image_url)
                                     <img id="main-image" 
-                                         src="{{ asset('storage/' . $product->image_url) }}" 
+                                         src="{{ asset( $product->image_url) }}" 
                                          alt="{{ $product->name }}"
                                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 @else
@@ -100,7 +100,7 @@
                         <div class="flex space-x-4 overflow-x-auto">
                             @if($product->image_url)
                                 <button class="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border-2 border-blue-500">
-                                    <img src="{{ asset('storage/' . $product->image_url) }}" 
+                                    <img src="{{ asset($product->image_url) }}" 
                                          alt="{{ $product->name }}"
                                          class="w-full h-full object-cover">
                                 </button>
@@ -550,7 +550,7 @@
                         <div class="group bg-gray-50 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 transform hover:-translate-y-2">
                             <div class="relative overflow-hidden">
                                 @if($relatedProduct->image_url)
-                                    <img src="{{ asset('storage/' . $relatedProduct->image_url) }}" 
+                                    <img src="{{ asset($relatedProduct->image_url) }}" 
                                          alt="{{ $relatedProduct->name }}" 
                                          class="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500">
                                 @else

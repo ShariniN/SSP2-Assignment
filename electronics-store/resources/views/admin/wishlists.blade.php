@@ -69,8 +69,8 @@
                         <div class="flex -space-x-2">
                             @foreach($user->wishlist->take(3) as $wishlistItem)
                                 @if($wishlistItem->product)
-                                    @if($wishlistItem->product->image)
-                                        <img src="{{ asset('storage/' . $wishlistItem->product->image) }}" 
+                                    @if($wishlistItem->product->image_url)
+                                        <img src="{{ asset($wishlistItem->product->image_url) }}" 
                                              alt="{{ $wishlistItem->product->name }}" 
                                              class="w-8 h-8 object-cover rounded-full border-2 border-white"
                                              title="{{ $wishlistItem->product->name }}">
@@ -157,8 +157,8 @@ function viewWishlist(userId) {
                 return `
                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div class="flex items-center">
-                            ${product.image 
-                                ? `<img src="/storage/${product.image}" alt="${product.name}" class="w-16 h-16 object-cover rounded">`
+                            ${product.image_url 
+                                ? `<img src="${product.image_url}" alt="${product.name}" class="w-16 h-16 object-cover rounded">`
                                 : `<div class="w-16 h-16 bg-gray-300 rounded flex items-center justify-center">
                                      <i class="fas fa-image text-gray-500"></i>
                                    </div>`}
@@ -176,7 +176,7 @@ function viewWishlist(userId) {
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="text-sm text-gray-500">Added ${new Date(item.created_at).toLocaleDateString()}</span>
-                            <button onclick="removeWishlistItem(${userId}, ${product.id})" class="text-red-600 hover:text-red-900" title="Remove from wishlist">
+                            <button onclick="removeWishlistItem(${userId}, '${product.id}')" class="text-red-600 hover:text-red-900" title="Remove from wishlist">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -188,7 +188,7 @@ function viewWishlist(userId) {
                 <div class="mb-6 flex justify-between items-center">
                     <div class="flex items-center">
                         ${user.profile_photo_path 
-                            ? `<img src="/storage/${user.profile_photo_path}" alt="${user.name}" class="w-12 h-12 object-cover rounded-full">`
+                            ? `<img src="${user.profile_photo_path}" alt="${user.name}" class="w-12 h-12 object-cover rounded-full">`
                             : `<div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
                                  <i class="fas fa-user text-gray-500"></i>
                                </div>`}

@@ -17,8 +17,8 @@
                 @foreach($relatedProducts as $relatedProduct)
                     <div class="group bg-gray-50 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 transform hover:-translate-y-2">
                         <div class="relative overflow-hidden">
-                            @if($relatedProduct->image)
-                                <img src="{{ asset('storage/' . $relatedProduct->image) }}" 
+                            @if($relatedProduct->image_url)
+                                <img src="{{ asset($relatedProduct->image_url) }}" 
                                      alt="{{ $relatedProduct->name }}" 
                                      class="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500">
                             @else
@@ -180,9 +180,9 @@
                                         <div class="p-6 flex items-center space-x-4">
                                             <!-- Product Image -->
                                             <div class="flex-shrink-0">
-                                                @if($item->product->image)
+                                                @if($item->product->image_url)
                                                     <img class="w-20 h-20 object-cover rounded-lg" 
-                                                         src="{{ asset('storage/' . $item->product->image) }}" 
+                                                         src="{{ asset($item->product->image_url) }}" 
                                                          alt="{{ $item->product->name }}">
                                                 @else
                                                     <div class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">

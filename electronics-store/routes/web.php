@@ -9,6 +9,8 @@ use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Models\Wishlist;
+use App\Models\Product;
 
 // ------------------- Social Login -------------------
 Route::get('/login/google', [SocialLoginController::class, 'redirectToGoogle'])->name('login.google');
@@ -113,6 +115,44 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/wishlists', [AdminController::class, 'indexWishlists'])->name('wishlists.index');
         Route::get('/users/{user}/wishlist/json', [AdminController::class, 'getWishlistJson'])->name('wishlists.json');
         Route::delete('/wishlists/{user}/{product}', [AdminController::class, 'removeWishlistItem'])->name('wishlists.remove');
+
+        // DEBUG ROUTES - Remove these after testing
+        Route::get('/debug-wishlist', function() {
+            try {
+                $wishlists = Wishlist::all();
+                $sampleWishlist = $wishlists->first();
+                
+                $debugData = [
+                    'total_count' => $wishlists->count(),
+                    'sample_wishlist' => $sampleWishlist ? $sampleWishlist->toArray() : null,
+                    'all_user_ids' => $wishlists->pluck('user_id')->unique()->values()->toArray(),
+                    'all_product_ids' => $wishlists->pluck('product_id')->toArray(),
+                ];
+                
+                // Try to load a product if we have a sample
+                if ($sampleWishlist) {
+                    $productId = is_string($sampleWishlist->product_id) 
+                        ? (int)trim($sampleWishlist->product_id, '"') 
+                        : (int)$sampleWishlist->product_id;
+                    
+                    $product = Product::find($productId);
+                    
+                    $debugData['sample_product_id_original'] = $sampleWishlist->product_id;
+                    $debugData['sample_product_id_converted'] = $productId;
+                    $debugData['sample_product_found'] = $product ? true : false;
+                    $debugData['sample_product_data'] = $product ? $product->toArray() : null;
+                }
+                
+                return response()->json($debugData, 200, [], JSON_PRETTY_PRINT);
+                
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ], 500);
+            }
+        })->name('debug.wishlist');
+        
     });
 
 // ------------------- Login (Web) -------------------

@@ -36,49 +36,150 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('stats'));
     }
 
-    // ------------------- Wishlists -------------------
-    public function indexWishlists(Request $request)
-    {
-        $userIds = Wishlist::distinct()->pluck('user_id');
+// ------------------- Wishlists -------------------
+public function indexWishlists(Request $request)
+{
+    // Get unique user IDs from MongoDB wishlists (they're stored as integers)
+    // Using get() and pluck instead of distinct() for MongoDB compatibility
+    $userIds = Wishlist::all()->pluck('user_id')->unique()->toArray();
 
-        $users = User::whereIn('id', $userIds)->latest()->paginate(15);
+    // Get users from MySQL with pagination
+    $users = User::whereIn('id', $userIds)
+        ->latest()
+        ->paginate(15);
 
-        $users->getCollection()->transform(function ($user) {
-            $user->wishlist_count = Wishlist::where('user_id', $user->id)->count();
-            return $user;
-        });
-
-        return view('admin.wishlists', compact('users'));
-    }
-
-    public function getWishlistJson(User $user)
-    {
+    // Load wishlist data for each user from MongoDB
+    $users->getCollection()->transform(function ($user) {
+        // Get wishlist items from MongoDB - user_id is stored as integer
         $wishlistItems = Wishlist::where('user_id', $user->id)->get();
-
-        $wishlistItems->transform(function ($item) {
-            $item->product = Product::find($item->product_id);
-            return $item;
-        });
-
-        return response()->json([
-            'user' => $user,
-            'wishlist' => $wishlistItems,
+        
+        \Log::info("Loading wishlist for user {$user->id}", [
+            'wishlist_count' => $wishlistItems->count()
         ]);
-    }
-
-    public function removeWishlistItem(User $user, $productId)
-    {
-        $item = Wishlist::where('user_id', $user->id)
-                        ->where('product_id', $productId)
-                        ->first();
-
-        if ($item) {
-            $item->delete();
-            return redirect()->back()->with('success', 'Item removed from wishlist successfully.');
+        
+        // Load product data for each wishlist item
+        $wishlistWithProducts = collect();
+        
+        foreach ($wishlistItems as $item) {
+            try {
+                // Convert product_id string to integer for MySQL query
+                $productId = is_string($item->product_id) 
+                    ? (int)trim($item->product_id, '"') 
+                    : (int)$item->product_id;
+                
+                $product = Product::with('category')->find($productId);
+                
+                if ($product) {
+                    $item->product = $product;
+                    $wishlistWithProducts->push($item);
+                } else {
+                    \Log::warning("Product not found for wishlist item", [
+                        'product_id_original' => $item->product_id,
+                        'product_id_converted' => $productId
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error("Error loading product for wishlist item", [
+                    'error' => $e->getMessage(),
+                    'product_id' => $item->product_id ?? 'unknown'
+                ]);
+            }
         }
+        
+        // Attach the wishlist collection to the user object
+        $user->wishlist = $wishlistWithProducts;
+        
+        \Log::info("Loaded wishlist products for user {$user->id}", [
+            'products_loaded' => $wishlistWithProducts->count()
+        ]);
+        
+        return $user;
+    });
 
-        return redirect()->back()->with('error', 'Item not found in wishlist.');
+    return view('admin.wishlists', compact('users'));
+}
+
+public function getWishlistJson(User $user)
+{
+    // Get wishlist items from MongoDB - user_id is stored as integer
+    $wishlistItems = Wishlist::where('user_id', $user->id)->get();
+
+    \Log::info("Getting wishlist JSON for user {$user->id}", [
+        'items_found' => $wishlistItems->count()
+    ]);
+
+    // Load products from MySQL
+    $wishlistWithProducts = collect();
+    
+    foreach ($wishlistItems as $item) {
+        try {
+            // Convert product_id string to integer for MySQL query
+            $productId = is_string($item->product_id) 
+                ? (int)trim($item->product_id, '"') 
+                : (int)$item->product_id;
+            
+            $product = Product::with('category')->find($productId);
+            
+            if ($product) {
+                $wishlistWithProducts->push([
+                    'id' => $item->id,
+                    'user_id' => $item->user_id,
+                    'product_id' => $productId,
+                    'created_at' => $item->created_at,
+                    'updated_at' => $item->updated_at,
+                    'product' => $product->toArray()
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error("Error loading product for wishlist JSON", [
+                'error' => $e->getMessage(),
+                'product_id' => $item->product_id ?? 'unknown'
+            ]);
+        }
     }
+
+    return response()->json([
+        'user' => $user,
+        'wishlist' => $wishlistWithProducts,
+    ]);
+}
+
+public function removeWishlistItem(User $user, $productId)
+{
+    // Handle both string and integer product IDs
+    $productIdString = (string)$productId;
+    $productIdQuoted = '"' . $productId . '"';
+    
+    \Log::info("Attempting to remove wishlist item", [
+        'user_id' => $user->id,
+        'product_id' => $productId
+    ]);
+    
+    // Try to delete with multiple formats
+    $deleted = Wishlist::where('user_id', $user->id)
+        ->where(function($query) use ($productId, $productIdString, $productIdQuoted) {
+            $query->where('product_id', (int)$productId)
+                  ->orWhere('product_id', $productIdString)
+                  ->orWhere('product_id', $productIdQuoted);
+        })
+        ->delete();
+
+    if ($deleted) {
+        \Log::info("Wishlist item removed successfully", [
+            'user_id' => $user->id,
+            'product_id' => $productId,
+            'deleted_count' => $deleted
+        ]);
+        return redirect()->back()->with('success', 'Item removed from wishlist successfully.');
+    }
+
+    \Log::warning("Wishlist item not found for removal", [
+        'user_id' => $user->id,
+        'product_id' => $productId
+    ]);
+    
+    return redirect()->back()->with('error', 'Item not found in wishlist.');
+}
 
     // ------------------- Products -------------------
     public function products()

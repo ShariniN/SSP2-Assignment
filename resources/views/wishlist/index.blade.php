@@ -9,7 +9,7 @@
             @foreach($items as $item)
                 @php $product = $item->product; @endphp
                 <div class="bg-white rounded-xl shadow hover:shadow-lg transition duration-200">
-                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-48 object-cover rounded-t-xl">
+                    <img src="{{ asset($product->image_url) }}" alt="{{ $product->name }}" class="w-full h-48 object-cover rounded-t-xl">
                     <div class="p-4">
                         <h2 class="text-lg font-semibold mb-2">{{ $product->name }}</h2>
                         <p class="text-gray-600 text-sm mb-2">

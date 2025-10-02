@@ -12,17 +12,10 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Models\Wishlist;
 use App\Models\Product;
 
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'ok',
-        'timestamp' => now(),
-        'port' => env('PORT', 'not set'),
-    ]);
-});
 
 // ------------------- Social Login -------------------
-Route::get('/login/google', [SocialLoginController::class, 'redirectToGoogle'])->name('login.google');
-Route::get('/login/google/callback', [SocialLoginController::class, 'handleGoogleCallback']);
+Route::get('/auth/google', [SocialLoginController::class, 'redirectToGoogle'])->name('login.google');
+Route::get('/auth/google/callback', [SocialLoginController::class, 'handleGoogleCallback']);
 
 // ------------------- Public Pages -------------------
 Route::get('/', [HomeController::class, 'index'])->name('home');

@@ -1,15 +1,15 @@
 # -------------------------------
 # Stage 1: Build Frontend Assets
 # -------------------------------
-FROM node:18-alpine AS frontend
+FROM node:20-alpine AS frontend
 
 WORKDIR /build
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies for Vite)
+RUN npm ci
 
 # Copy only files needed for Vite build
 COPY vite.config.js postcss.config.js tailwind.config.js ./

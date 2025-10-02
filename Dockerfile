@@ -55,7 +55,6 @@ RUN npm install && npm run build
 # -------------------------------
 # Generate Laravel key (LOCAL ONLY)
 # -------------------------------
-RUN php artisan key:generate
 
 # -------------------------------
 # Fix permissions

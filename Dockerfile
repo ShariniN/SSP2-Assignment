@@ -24,6 +24,12 @@ RUN npm run build
 # -------------------------------
 FROM composer:2 AS composer
 
+# Install MongoDB extension in composer stage
+RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS openssl-dev \
+    && pecl install mongodb \
+    && docker-php-ext-enable mongodb \
+    && apk del .build-deps
+
 WORKDIR /build
 
 # Copy composer files

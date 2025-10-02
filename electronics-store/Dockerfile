@@ -21,7 +21,8 @@ RUN apt-get update && apt-get install -y \
         npm \
     && pecl install mongodb \
     && docker-php-ext-enable mongodb \
-    && docker-php-ext-install pdo_mysql zip
+    && docker-php-ext-install pdo_mysql zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -32,24 +33,14 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 
 # -------------------------------
-# Copy composer binary from composer image
+# Copy composer binary
 # -------------------------------
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # -------------------------------
-# Copy all project files
+# Copy project files
 # -------------------------------
 COPY . .
-
-# -------------------------------
-# Install Node.js dependencies
-# -------------------------------
-RUN npm install
-
-# -------------------------------
-# Build frontend assets for production
-# -------------------------------
-RUN npm run build
 
 # -------------------------------
 # Install PHP dependencies
@@ -57,7 +48,17 @@ RUN npm run build
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # -------------------------------
-# Fix permissions for Laravel
+# Build frontend assets
+# -------------------------------
+RUN npm install && npm run build
+
+# -------------------------------
+# Generate Laravel key (LOCAL ONLY)
+# -------------------------------
+RUN php artisan key:generate
+
+# -------------------------------
+# Fix permissions
 # -------------------------------
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
@@ -69,11 +70,11 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available
     && sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/apache2.conf
 
 # -------------------------------
-# Expose port 8080 for Render
+# Expose port
 # -------------------------------
 EXPOSE 8080
 
 # -------------------------------
-# Run Apache in foreground
+# Run Apache
 # -------------------------------
 CMD ["apache2-foreground"]

@@ -53,10 +53,6 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progre
 RUN npm install && npm run build
 
 # -------------------------------
-# Generate Laravel key (LOCAL ONLY)
-# -------------------------------
-
-# -------------------------------
 # Fix permissions
 # -------------------------------
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
@@ -69,9 +65,11 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available
     && sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/apache2.conf
 
 # -------------------------------
-# Expose port
+# Make Apache listen on Railway's PORT
 # -------------------------------
-EXPOSE 8080
+ENV PORT 8080
+RUN sed -i "s/80/${PORT}/g" /etc/apache2/ports.conf
+EXPOSE ${PORT}
 
 # -------------------------------
 # Run Apache

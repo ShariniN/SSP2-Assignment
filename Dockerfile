@@ -55,11 +55,10 @@ FROM php:8.2-apache
 
 # Install ONLY runtime dependencies (minimal)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libssl3 \
     libcurl4 \
     libpng16-16 \
     libonig5 \
-    libzip4 \
+    libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions (build deps removed after)

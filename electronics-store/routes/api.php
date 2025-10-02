@@ -1,25 +1,36 @@
 <?php
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\AuthController;
 
-Route::post('/api/token', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+// Authentication
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
-    if (!Auth::attempt($request->only('email', 'password'))) {
-        return response()->json(['message' => 'Invalid login'], 401);
-    }
-
-    $user = $request->user();
-    $token = $user->createToken('api-token')->plainTextToken;
-
-    return response()->json(['token' => $token]);
-});
-
+// Protected API routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/products', [ProductController::class, 'apiIndex']); // returns JSON
-    Route::post('/orders', [OrderController::class, 'store']);       // create order
+
+    // Products
+    Route::get('/products', [ProductController::class, 'apiIndex']);       
+    Route::get('/products/{id}', [ProductController::class, 'apiShow']);   
+
+    // Categories
+    Route::get('/categories', [CategoryController::class, 'apiIndex']);                 
+    Route::get('/categories/{id}/products', [CategoryController::class, 'apiProducts']); 
+    Route::get('/categories/search', [CategoryController::class, 'apiSearch']);          
+    Route::get('/categories/slug/{slug}', [CategoryController::class, 'apiShowBySlug']); 
+
+    // Wishlist
+    Route::get('/wishlist', [WishlistController::class, 'index']); 
+    Route::post('/wishlist', [WishlistController::class, 'store']);
+    Route::delete('/wishlist/{id}', [WishlistController::class, 'destroy']);
+
+    // Orders
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']);
 });

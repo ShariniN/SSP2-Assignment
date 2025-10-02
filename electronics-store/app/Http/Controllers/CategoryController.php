@@ -8,83 +8,181 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of all categories
-     */
+
     public function index()
     {
-        // Get categories with product count, only active categories
         $categories = Category::where('is_active', true)
-                             ->withCount('products')
-                             ->orderBy('name')
-                             ->get();
-        
+                              ->withCount('products')
+                              ->orderBy('name')
+                              ->get();
         return view('categories.index', compact('categories'));
     }
-    
-    /**
-     * Show products for a specific category
-     */
+
     public function showProducts($id)
     {
-        $category = Category::where('is_active', true)
-                           ->findOrFail($id);
-        
-        // Get products for this category with pagination
+        $category = Category::where('is_active', true)->findOrFail($id);
+
         $products = Product::where('category_id', $id)
-                          ->where('is_active', true)
-                          ->with('category')
-                          ->paginate(12);
+                           ->where('is_active', true)
+                           ->with('category')
+                           ->paginate(12);
+
         return view('category', compact('category', 'products'));
     }
-    
-    /**
-     * Search categories and products
-     */
+
     public function search(Request $request)
     {
         $query = $request->input('q');
-        
         if (empty($query)) {
             return redirect()->route('categories.index');
         }
-        
-        // Search in categories
+
         $categories = Category::where('is_active', true)
-                             ->where(function($q) use ($query) {
-                                 $q->where('name', 'LIKE', "%{$query}%")
-                                   ->orWhere('description', 'LIKE', "%{$query}%");
-                             })
-                             ->withCount('products')
-                             ->get();
-        
-        // Search in products
+                              ->where(function($q) use ($query) {
+                                  $q->where('name', 'LIKE', "%{$query}%")
+                                    ->orWhere('description', 'LIKE', "%{$query}%");
+                              })
+                              ->withCount('products')
+                              ->get();
+
         $products = Product::where('is_active', true)
-                          ->where(function($q) use ($query) {
-                              $q->where('name', 'LIKE', "%{$query}%")
-                                ->orWhere('description', 'LIKE', "%{$query}%")
-                                ->orWhere('brand', 'LIKE', "%{$query}%");
-                          })
-                          ->with('category')
-                          ->paginate(12);
-        
+                           ->where(function($q) use ($query) {
+                               $q->where('name', 'LIKE', "%{$query}%")
+                                 ->orWhere('description', 'LIKE', "%{$query}%")
+                                 ->orWhere('brand', 'LIKE', "%{$query}%");
+                           })
+                           ->with('category')
+                           ->paginate(12);
+
         return view('categories.search', compact('categories', 'products', 'query'));
     }
-    
-    /**
-     * Get category by slug (if you're using slugs)
-     */
+
     public function showBySlug($slug)
     {
         $category = Category::where('slug', $slug)
-                           ->where('is_active', true)
-                           ->firstOrFail();
-        
+                            ->where('is_active', true)
+                            ->firstOrFail();
+
         $products = Product::where('category_id', $category->id)
-                          ->where('is_active', true)
-                          ->with('category')
-                          ->paginate(12);
-        
+                           ->where('is_active', true)
+                           ->with('category')
+                           ->paginate(12);
+
         return view('category', compact('category', 'products'));
+    }
+
+    public function apiIndex()
+    {
+        try {
+            $categories = Category::where('is_active', true)
+                                  ->withCount('products')
+                                  ->orderBy('name')
+                                  ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $categories
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch categories',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function apiProducts($id)
+    {
+        try {
+            $category = Category::where('is_active', true)->findOrFail($id);
+
+            $products = Product::where('category_id', $id)
+                               ->where('is_active', true)
+                               ->with('category')
+                               ->get();
+
+            return response()->json([
+                'success' => true,
+                'category' => $category,
+                'products' => $products
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch products for category',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function apiSearch(Request $request)
+    {
+        $query = $request->input('q');
+
+        if (empty($query)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Search query cannot be empty'
+            ], 400);
+        }
+
+        try {
+            $categories = Category::where('is_active', true)
+                                  ->where(function ($q) use ($query) {
+                                      $q->where('name', 'LIKE', "%{$query}%")
+                                        ->orWhere('description', 'LIKE', "%{$query}%");
+                                  })
+                                  ->withCount('products')
+                                  ->get();
+
+            $products = Product::where('is_active', true)
+                               ->where(function ($q) use ($query) {
+                                   $q->where('name', 'LIKE', "%{$query}%")
+                                     ->orWhere('description', 'LIKE', "%{$query}%")
+                                     ->orWhere('brand', 'LIKE', "%{$query}%");
+                               })
+                               ->with('category')
+                               ->get();
+
+            return response()->json([
+                'success' => true,
+                'categories' => $categories,
+                'products' => $products
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Search failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function apiShowBySlug($slug)
+    {
+        try {
+            $category = Category::where('slug', $slug)
+                                ->where('is_active', true)
+                                ->firstOrFail();
+
+            $products = Product::where('category_id', $category->id)
+                               ->where('is_active', true)
+                               ->with('category')
+                               ->get();
+
+            return response()->json([
+                'success' => true,
+                'category' => $category,
+                'products' => $products
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch category by slug',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

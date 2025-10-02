@@ -29,6 +29,19 @@ Route::get('/products/search', [ProductController::class, 'search'])->name('prod
 Route::get('/products/{id}/quick-view', [ProductController::class, 'quickView'])->name('products.quick-view');
 Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
 
+// Review Routes (Protected - Require Authentication)
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
+    Route::get('/products/{product}/reviews/create', [App\Http\Controllers\ReviewController::class, 'create'])->name('reviews.create');
+    Route::post('/products/{product}/reviews', [App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+    Route::get('/reviews/{review}/edit', [App\Http\Controllers\ReviewController::class, 'edit'])->name('reviews.edit');
+    Route::put('/reviews/{review}', [App\Http\Controllers\ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{review}', [App\Http\Controllers\ReviewController::class, 'destroy'])->name('reviews.destroy');
+});
+
+// Public Review Routes
+Route::get('/products/{product}/reviews', [App\Http\Controllers\ReviewController::class, 'index'])->name('reviews.index');
+Route::get('/products/{product}/reviews/load-more', [App\Http\Controllers\ReviewController::class, 'loadMore'])->name('reviews.load-more');
+
 // Wishlist (Web)
 Route::middleware('auth')->group(function () {
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
@@ -78,6 +91,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::delete('/categories/{category}', [AdminController::class, 'deleteCategory'])->name('categories.delete');
         Route::get('/categories/{category}/edit-json', [AdminController::class, 'getCategoryJson'])->name('categories.json');
 
+        // Brands
+        Route::get('/brands', [AdminController::class, 'brands'])->name('brands.index');
+        Route::post('/brands', [AdminController::class, 'storeBrand'])->name('brands.store');
+        Route::put('/brands/{brand}', [AdminController::class, 'updateBrand'])->name('brands.update');
+        Route::delete('/brands/{brand}', [AdminController::class, 'deleteBrand'])->name('brands.delete');
+
         // Orders
         Route::get('/orders', [AdminController::class, 'orders'])->name('orders.index');
         Route::get('/orders/{order}/json', [AdminController::class, 'getOrderJson'])->name('orders.json');
@@ -105,37 +124,4 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store'])
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
-
-// ------------------- API Routes for Mobile App -------------------
-Route::prefix('api')->middleware('auth:sanctum')->group(function () {
-
-    // Authentication
-    Route::post('/login', [AuthenticatedSessionController::class, 'apiLogin']);
-    Route::post('/register', [AuthenticatedSessionController::class, 'apiRegister']);
-    Route::get('/user', [AuthenticatedSessionController::class, 'apiUser']);
-
-    // Products
-    Route::get('/products', [AdminController::class, 'apiProducts']);
-    Route::get('/products/{product}', [AdminController::class, 'showProduct']); // detail
-
-    // Categories
-    Route::get('/categories', [AdminController::class, 'apiCategories']);
-
-    // Brands
-    Route::get('/brands', [AdminController::class, 'apiBrands']);
-
-    // Orders
-    Route::get('/orders', [CheckoutController::class, 'apiUserOrders']);
-    Route::get('/orders/{order}', [AdminController::class, 'getOrderJson']);
-
-    // Wishlist
-    Route::get('/wishlist', [WishlistController::class, 'apiIndex']);
-    Route::post('/wishlist/add/{product}', [WishlistController::class, 'add']);
-    Route::delete('/wishlist/remove/{product}', [WishlistController::class, 'remove']);
-
-    // Cart / Checkout
-    Route::get('/cart', [CheckoutController::class, 'apiCart']);
-    Route::post('/cart/add/{product}', [CheckoutController::class, 'apiAddToCart']);
-    Route::post('/checkout', [CheckoutController::class, 'apiCheckout']);
-    Route::get('/checkout/success', [CheckoutController::class, 'success']);
-});
+require __DIR__.'/auth.php';

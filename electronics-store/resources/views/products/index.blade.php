@@ -96,8 +96,8 @@
                             <div class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden transform hover:-translate-y-1">
                                 <!-- Product Image -->
                                 <div class="relative overflow-hidden">
-                                    @if($product->image)
-                                        <img src="{{ asset('storage/' . $product->image) }}" 
+                                    @if($product->image_url)
+                                        <img src="{{ asset('storage/' . $product->image_url) }}" 
                                              alt="{{ $product->name }}" 
                                              class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
                                     @else

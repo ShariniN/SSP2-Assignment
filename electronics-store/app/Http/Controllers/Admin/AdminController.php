@@ -12,6 +12,7 @@ use App\Models\Wishlist;
 use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -38,7 +39,7 @@ class AdminController extends Controller
     // ------------------- Wishlists -------------------
     public function indexWishlists(Request $request)
     {
-        $userIds = Wishlist::distinct('user_id')->get()->pluck('user_id');
+        $userIds = Wishlist::distinct()->pluck('user_id');
 
         $users = User::whereIn('id', $userIds)->latest()->paginate(15);
 
@@ -90,27 +91,42 @@ class AdminController extends Controller
 
     public function storeProduct(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0|lt:price',
             'stock_quantity' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'nullable|exists:brands,id',
+            'brand_id' => 'required|exists:brands,id',
             'sku' => 'nullable|string|unique:products',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'specifications' => 'nullable|json',
-            'is_active' => 'boolean',
-            'is_featured' => 'boolean'
+            'specifications' => 'nullable|string'
         ]);
 
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
-        $data['is_featured'] = $request->has('is_featured');
+        $data = [
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'price' => $validated['price'],
+            'discount_price' => $validated['discount_price'] ?? null,
+            'stock_quantity' => $validated['stock_quantity'],
+            'category_id' => $validated['category_id'],
+            'brand_id' => $validated['brand_id'],
+            'sku' => $validated['sku'] ?? strtoupper(Str::random(8)),
+            'is_active' => $request->has('is_active') ? 1 : 0,
+            'is_featured' => $request->has('is_featured') ? 1 : 0
+        ];
+
+        // handle specs
+        if (!empty($validated['specifications'])) {
+            $decoded = json_decode($validated['specifications'], true);
+            $data['specifications'] = $decoded ?? [];
+        } else {
+            $data['specifications'] = [];
+        }
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image_url'] = $request->file('image')->store('products', 'public');
         }
 
         Product::create($data);
@@ -122,37 +138,45 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:100',
+            'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
             'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'nullable|exists:brands,id',
+            'brand_id' => 'required|exists:brands,id',
             'price' => 'required|numeric',
             'discount_price' => 'nullable|numeric',
             'stock_quantity' => 'required|integer',
             'description' => 'required|string',
             'specifications' => 'nullable|string',
-            'is_active' => 'nullable',
-            'is_featured' => 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $validated['is_active'] = $request->has('is_active');
-        $validated['is_featured'] = $request->has('is_featured');
+        $data = [
+            'name' => $validated['name'],
+            'sku' => $validated['sku'],
+            'category_id' => $validated['category_id'],
+            'brand_id' => $validated['brand_id'],
+            'price' => $validated['price'],
+            'discount_price' => $validated['discount_price'] ?? null,
+            'stock_quantity' => $validated['stock_quantity'],
+            'description' => $validated['description'],
+            'is_active' => $request->has('is_active') ? 1 : 0,
+            'is_featured' => $request->has('is_featured') ? 1 : 0
+        ];
 
         if (!empty($validated['specifications'])) {
             $decoded = json_decode($validated['specifications'], true);
-            $validated['specifications'] = $decoded ?? [];
+            $data['specifications'] = $decoded ?? [];
         } else {
-            $validated['specifications'] = [];
+            $data['specifications'] = [];
         }
 
         if ($request->hasFile('image')) {
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
+            if ($product->image_url) {
+                Storage::disk('public')->delete($product->image_url);
             }
-            $validated['image'] = $request->file('image')->store('products', 'public');
+            $data['image_url'] = $request->file('image')->store('products', 'public');
         }
 
-        $product->update($validated);
+        $product->update($data);
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
     }
@@ -163,8 +187,8 @@ class AdminController extends Controller
             return redirect()->route('admin.products.index')->with('error', 'Cannot delete product with existing orders.');
         }
 
-        if ($product->image) {
-            Storage::disk('public')->delete($product->image);
+        if ($product->image_url) {
+            Storage::disk('public')->delete($product->image_url);
         }
 
         $product->delete();
@@ -262,14 +286,16 @@ class AdminController extends Controller
 
     public function storeCategory(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean'
+            'description' => 'nullable|string'
         ]);
 
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
+        $data = [
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'is_active' => $request->has('is_active') ? 1 : 0
+        ];
 
         Category::create($data);
 
@@ -278,14 +304,16 @@ class AdminController extends Controller
 
     public function updateCategory(Request $request, Category $category)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
-            'description' => 'nullable|string',
-            'is_active' => 'boolean'
+            'description' => 'nullable|string'
         ]);
 
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
+        $data = [
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'is_active' => $request->has('is_active') ? 1 : 0
+        ];
 
         $category->update($data);
 
@@ -316,15 +344,17 @@ class AdminController extends Controller
 
     public function storeBrand(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255|unique:brands',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'boolean'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
+        $data = [
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'is_active' => $request->has('is_active') ? 1 : 0
+        ];
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('brands', 'public');
@@ -341,11 +371,11 @@ class AdminController extends Controller
             'name' => 'required|string|max:255|unique:brands,name,' . $brand->id,
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'boolean'
+            'is_active' => 'nullable|boolean'
         ]);
 
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
+        $data = $request->only(['name','description']);
+        $data['is_active'] = $request->has('is_active') ? true : false;
 
         if ($request->hasFile('image')) {
             if ($brand->image) {
@@ -370,7 +400,6 @@ class AdminController extends Controller
         }
 
         $brand->delete();
-
         return redirect()->route('admin.brands.index')->with('success', 'Brand deleted successfully.');
     }
 }

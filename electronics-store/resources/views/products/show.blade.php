@@ -57,9 +57,9 @@
                     <div class="space-y-6">
                         <div class="relative group">
                             <div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden shadow-lg">
-                                @if($product->image)
+                                @if($product->image_url)
                                     <img id="main-image" 
-                                         src="{{ asset('storage/' . $product->image) }}" 
+                                         src="{{ asset('storage/' . $product->image_url) }}" 
                                          alt="{{ $product->name }}"
                                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 @else
@@ -69,7 +69,7 @@
                                 @endif
                                 
                                 <!-- Image Zoom Indicator -->
-                                @if($product->image)
+                                @if($product->image_url)
                                     <div class="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                                         <i class="fas fa-search-plus mr-1"></i>Zoom
                                     </div>
@@ -98,14 +98,13 @@
 
                         <!-- Thumbnail Gallery (if multiple images exist) -->
                         <div class="flex space-x-4 overflow-x-auto">
-                            @if($product->image)
+                            @if($product->image_url)
                                 <button class="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border-2 border-blue-500">
-                                    <img src="{{ asset('storage/' . $product->image) }}" 
+                                    <img src="{{ asset('storage/' . $product->image_url) }}" 
                                          alt="{{ $product->name }}"
                                          class="w-full h-full object-cover">
                                 </button>
                             @endif
-                            <!-- Add more thumbnails here if you have multiple images -->
                         </div>
                     </div>
 
@@ -217,26 +216,24 @@
 
                         <!-- Enhanced Add to Cart Section with Wishlist -->
                         @auth
+                            @php
+                                $inWishlist = auth()->user()->wishlist()->where('product_id', $product->id)->exists();
+                            @endphp
+                            
                             @if($product->stock_quantity > 0)
-                                <div class="flex flex-col sm:flex-row gap-4">
+                                <div class="space-y-4">
                                     <!-- Add to Cart Component -->
-                                    <div class="flex-1">
-                                        <livewire:cart-component :product="$product" />
-                                    </div>
+                                    <livewire:cart-component :product="$product" />
                                     
-                                    <!-- Wishlist Button -->
-                                    @php
-                                        $inWishlist = auth()->user()->wishlist()->where('product_id', $product->id)->exists();
-                                    @endphp
-                                    
+                                    <!-- Single Wishlist Button -->
                                     <form action="{{ $inWishlist ? route('wishlist.remove', $product->id) : route('wishlist.add', $product->id) }}" 
-                                          method="POST" class="flex-1 sm:flex-initial">
+                                        method="POST" class="w-full">
                                         @csrf
                                         @if($inWishlist)
                                             @method('DELETE')
                                         @endif
                                         <button type="submit" 
-                                            class="w-full sm:w-auto bg-pink-500 hover:bg-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                                            class="w-full bg-pink-500 hover:bg-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
                                             <i class="{{ $inWishlist ? 'fas' : 'far' }} fa-heart mr-3"></i>
                                             {{ $inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' }}
                                         </button>
@@ -248,25 +245,6 @@
                                             class="w-full bg-gray-200 text-gray-400 py-4 px-6 rounded-xl font-bold text-lg cursor-not-allowed">
                                         <i class="fas fa-times mr-3"></i>Out of Stock
                                     </button>
-                                    
-                                    <!-- Wishlist Button (still available when out of stock) -->
-                                    @php
-                                        $inWishlist = auth()->user()->wishlist()->where('product_id', $product->id)->exists();
-                                    @endphp
-                                    
-                                    <form action="{{ $inWishlist ? route('wishlist.remove', $product->id) : route('wishlist.add', $product->id) }}" 
-                                          method="POST" class="w-full">
-                                        @csrf
-                                        @if($inWishlist)
-                                            @method('DELETE')
-                                        @endif
-                                        <button type="submit" 
-                                            class="w-full bg-pink-500 hover:bg-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                                            <i class="{{ $inWishlist ? 'fas' : 'far' }} fa-heart mr-3"></i>
-                                            {{ $inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' }}
-                                        </button>
-                                    </form>
-                                    
                                     <button type="button" 
                                             class="w-full bg-blue-100 text-blue-700 py-3 px-6 rounded-xl font-medium hover:bg-blue-200 transition-colors">
                                         <i class="fas fa-bell mr-2"></i>Notify When Available
@@ -282,11 +260,11 @@
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <a href="{{ route('login') }}" 
-                                       class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-center">
+                                    class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-center">
                                         <i class="fas fa-sign-in-alt mr-3"></i>Sign In
                                     </a>
                                     <a href="{{ route('register') }}" 
-                                       class="w-full bg-gray-100 text-gray-700 py-4 px-6 rounded-xl font-bold text-lg hover:bg-gray-200 transition-all duration-200 border-2 border-gray-200 text-center">
+                                    class="w-full bg-gray-100 text-gray-700 py-4 px-6 rounded-xl font-bold text-lg hover:bg-gray-200 transition-all duration-200 border-2 border-gray-200 text-center">
                                         <i class="fas fa-user-plus mr-3"></i>Create Account
                                     </a>
                                 </div>
@@ -377,9 +355,9 @@
                             <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-8 border border-yellow-200">
                                 <div class="flex items-center justify-between mb-6">
                                     <h3 class="text-2xl font-bold text-gray-900">Customer Reviews</h3>
-                                    <button class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium">
+                                    <a href="{{ route('reviews.create', $product->id) }}" class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium">
                                         <i class="fas fa-edit mr-2"></i>Write a Review
-                                    </button>
+                                    </a>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div class="text-center">
@@ -398,13 +376,20 @@
                                         <p class="text-gray-600">Based on {{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}</p>
                                     </div>
                                     <div class="space-y-2">
+                                        @php
+                                            $ratingCounts = $product->reviews->groupBy('rating')->map->count();
+                                        @endphp
                                         @for($i = 5; $i >= 1; $i--)
+                                            @php
+                                                $count = $ratingCounts[$i] ?? 0;
+                                                $percentage = $reviewCount > 0 ? ($count / $reviewCount) * 100 : 0;
+                                            @endphp
                                             <div class="flex items-center space-x-3">
-                                                <span class="text-sm font-medium text-gray-700">{{ $i }} stars</span>
+                                                <span class="text-sm font-medium text-gray-700 w-16">{{ $i }} stars</span>
                                                 <div class="flex-1 bg-gray-200 rounded-full h-2">
-                                                    <div class="bg-yellow-400 h-2 rounded-full" style="width: {{ rand(10, 90) }}%"></div>
+                                                    <div class="bg-yellow-400 h-2 rounded-full" style="width: {{ $percentage }}%"></div>
                                                 </div>
-                                                <span class="text-sm text-gray-600">{{ rand(1, 50) }}</span>
+                                                <span class="text-sm text-gray-600 w-8 text-right">{{ $count }}</span>
                                             </div>
                                         @endfor
                                     </div>
@@ -413,43 +398,42 @@
 
                             <!-- Individual Reviews -->
                             <div class="space-y-6">
-                                <!-- Sample Review Structure - Replace with actual reviews -->
-                                @for($i = 1; $i <= min(5, $reviewCount); $i++)
+                                @foreach($product->reviews->take(5) as $review)
                                     <div class="border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
                                         <div class="flex items-start justify-between mb-4">
                                             <div class="flex items-center space-x-4">
                                                 <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
-                                                    {{ chr(64 + $i) }}
+                                                    {{ strtoupper(substr($review->user->name ?? 'U', 0, 1)) }}
                                                 </div>
                                                 <div>
-                                                    <h4 class="font-bold text-gray-900">Customer {{ $i }}</h4>
+                                                    <h4 class="font-bold text-gray-900">{{ $review->user->name ?? 'Anonymous' }}</h4>
                                                     <p class="text-sm text-gray-500">Verified Purchase</p>
                                                 </div>
                                             </div>
                                             <div class="text-right">
                                                 <div class="flex items-center mb-1">
                                                     @for($j = 1; $j <= 5; $j++)
-                                                        @if($j <= rand(4, 5))
+                                                        @if($j <= $review->rating)
                                                             <i class="fas fa-star text-yellow-400"></i>
                                                         @else
                                                             <i class="far fa-star text-gray-300"></i>
                                                         @endif
                                                     @endfor
                                                 </div>
-                                                <p class="text-sm text-gray-500">{{ rand(1, 30) }} days ago</p>
+                                                <p class="text-sm text-gray-500">{{ $review->created_at->diffForHumans() }}</p>
                                             </div>
                                         </div>
-                                        <p class="text-gray-700 leading-relaxed">This is a sample review. Replace this section with actual review content from your database.</p>
+                                        <p class="text-gray-700 leading-relaxed">{{ $review->comment }}</p>
                                     </div>
-                                @endfor
+                                @endforeach
                             </div>
 
                             <!-- Load More Reviews -->
                             @if($reviewCount > 5)
                                 <div class="text-center">
-                                    <button class="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium">
-                                        Load More Reviews
-                                    </button>
+                                    <a href="{{ route('reviews.index', $product->id) }}" class="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium inline-block">
+                                        View All Reviews
+                                    </a>
                                 </div>
                             @endif
                         </div>
@@ -460,9 +444,9 @@
                             </div>
                             <h3 class="text-2xl font-bold text-gray-700 mb-4">No Reviews Yet</h3>
                             <p class="text-gray-500 text-lg mb-8 max-w-md mx-auto">Be the first to share your experience with this product and help other customers make informed decisions!</p>
-                            <button class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
+                            <a href="{{ route('reviews.create', $product->id) }}" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105 inline-block">
                                 <i class="fas fa-edit mr-3"></i>Write the First Review
-                            </button>
+                            </a>
                         </div>
                     @endif
                 </div>
@@ -565,8 +549,8 @@
                     @foreach($relatedProducts as $relatedProduct)
                         <div class="group bg-gray-50 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 transform hover:-translate-y-2">
                             <div class="relative overflow-hidden">
-                                @if($relatedProduct->image)
-                                    <img src="{{ asset('storage/' . $relatedProduct->image) }}" 
+                                @if($relatedProduct->image_url)
+                                    <img src="{{ asset('storage/' . $relatedProduct->image_url) }}" 
                                          alt="{{ $relatedProduct->name }}" 
                                          class="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500">
                                 @else

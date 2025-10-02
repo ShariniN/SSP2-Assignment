@@ -25,6 +25,16 @@
 </div>
 @endif
 
+@if ($errors->any())
+<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    <ul>
+        @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 <!-- Categories Table -->
 <div class="bg-white shadow overflow-hidden rounded-lg">
     <div class="px-6 py-4 border-b border-gray-200">
@@ -34,6 +44,7 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products Count</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -44,9 +55,12 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($categories as $category)
                 <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        #{{ $category->id }}
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
-                            <div class="ml-4">
+                            <div>
                                 <div class="text-sm font-medium text-gray-900">{{ $category->name }}</div>
                                 <div class="text-sm text-gray-500">{{ Str::limit($category->description, 50) }}</div>
                             </div>
@@ -69,18 +83,14 @@
                         <button onclick="editCategory({{ $category->id }})" class="text-indigo-600 hover:text-indigo-900 mr-3">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <form method="POST" action="{{ route('admin.categories.delete', $category) }}" class="inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" onclick="return confirm('Delete this category?')" class="text-red-600 hover:text-red-900">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
+                        <button onclick="deleteCategory({{ $category->id }})" class="text-red-600 hover:text-red-900">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                         No categories found
                     </td>
                 </tr>
@@ -103,9 +113,10 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="categoryForm" method="POST" enctype="multipart/form-data">
+            <form id="categoryForm" method="POST">
                 @csrf
-                <input type="hidden" id="categoryId" name="_method" value="">
+                <input type="hidden" name="_method" id="formMethod" value="">
+                
                 <div class="grid grid-cols-1 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Name *</label>
@@ -138,11 +149,12 @@ const categoryModal = document.getElementById('categoryModal');
 const categoryForm = document.getElementById('categoryForm');
 const modalTitle = document.getElementById('modalTitle');
 const submitText = document.getElementById('submitText');
+const formMethod = document.getElementById('formMethod');
 
 // Open add modal
 document.getElementById('addCategoryBtn').addEventListener('click', () => {
     categoryForm.action = "{{ route('admin.categories.store') }}";
-    categoryForm.querySelector('[name="_method"]').value = '';
+    formMethod.value = '';
     modalTitle.textContent = 'Add Category';
     submitText.textContent = 'Add Category';
     categoryForm.reset();
@@ -153,19 +165,39 @@ document.getElementById('addCategoryBtn').addEventListener('click', () => {
 // Open edit modal
 function editCategory(id) {
     fetch(`/admin/categories/${id}/edit-json`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to load category');
+            return res.json();
+        })
         .then(data => {
             categoryForm.action = `/admin/categories/${id}`;
-            categoryForm.querySelector('[name="_method"]').value = 'PUT';
+            formMethod.value = 'PUT';
             modalTitle.textContent = 'Edit Category';
             submitText.textContent = 'Update Category';
-            document.getElementById('categoryId').value = data.id;
             document.getElementById('categoryName').value = data.name;
             document.getElementById('categoryDescription').value = data.description || '';
             document.getElementById('categoryActive').checked = data.is_active;
             categoryModal.classList.remove('hidden');
         })
-        .catch(err => alert('Error loading category data'));
+        .catch(err => {
+            console.error('Error loading category:', err);
+            alert('Error loading category data');
+        });
+}
+
+// Delete category
+function deleteCategory(id) {
+    if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/categories/${id}`;
+        form.innerHTML = `
+            @csrf
+            @method('DELETE')
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
 
 // Close modal

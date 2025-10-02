@@ -9,9 +9,20 @@
             <h1 class="text-3xl font-bold text-gray-900">Products Management</h1>
             <p class="text-gray-600 mt-2">Manage your store products</p>
         </div>
+        @if($brands->count() > 0)
         <button id="addProductBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
             <i class="fas fa-plus mr-2"></i>Add Product
         </button>
+        @else
+        <div class="text-right">
+            <button disabled class="bg-gray-400 text-white px-6 py-2 rounded-lg cursor-not-allowed" title="Create a brand first">
+                <i class="fas fa-plus mr-2"></i>Add Product
+            </button>
+            <p class="text-sm text-red-600 mt-2">
+                <a href="{{ route('admin.brands.index') }}" class="underline">Create a brand</a> before adding products
+            </p>
+        </div>
+        @endif
     </div>
 </div>
 
@@ -25,6 +36,16 @@
 @if(session('error'))
 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
     {{ session('error') }}
+</div>
+@endif
+
+@if ($errors->any())
+<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    <ul>
+        @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
 </div>
 @endif
 
@@ -51,8 +72,8 @@
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
-                            @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-12 h-12 object-cover rounded">
+                            @if($product->image_url)
+                                <img src="{{ asset('storage/' . $product->image_url) }}" alt="{{ $product->name }}" class="w-12 h-12 object-cover rounded">
                             @else
                                 <div class="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
                                     <i class="fas fa-image text-gray-500"></i>
@@ -128,7 +149,6 @@
             <form id="productForm" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="_method" id="formMethod" value="">
-                <input type="hidden" id="productId" value="">
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -153,13 +173,20 @@
                     
                     @if($brands->count() > 0)
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Brand</label>
-                        <select name="brand_id" id="productBrand" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <label class="block text-sm font-medium text-gray-700">Brand *</label>
+                        <select name="brand_id" id="productBrand" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Select Brand</option>
                             @foreach($brands as $brand)
                                 <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                             @endforeach
                         </select>
+                    </div>
+                    @else
+                    <div>
+                        <p class="text-sm text-red-600">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Please create at least one brand before adding products.
+                        </p>
                     </div>
                     @endif
                     
@@ -181,6 +208,9 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Image</label>
                         <input type="file" name="image" id="productImage" accept="image/*" class="mt-1 block w-full">
+                        <div id="currentImagePreview" class="mt-2 hidden">
+                            <img id="currentImage" src="" alt="Current" class="h-20 w-20 object-cover rounded">
+                        </div>
                     </div>
                 </div>
                 
@@ -191,12 +221,13 @@
                 
                 <div class="mt-4">
                     <label class="block text-sm font-medium text-gray-700">Specifications (JSON)</label>
-                    <textarea name="specifications" id="productSpecifications" rows="2" placeholder='{"color": "red", "size": "large"}' class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                    <textarea name="specifications" id="productSpecifications" rows="2" placeholder='{"color": "red", "size": "large"}' class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono text-sm"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Enter valid JSON or leave empty</p>
                 </div>
                 
                 <div class="mt-4 flex space-x-4">
                     <label class="flex items-center">
-                        <input type="checkbox" name="is_active" id="productActive" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        <input type="checkbox" name="is_active" id="productActive" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                         <span class="ml-2 text-sm text-gray-700">Active</span>
                     </label>
                     
@@ -233,6 +264,9 @@ document.getElementById('addProductBtn').addEventListener('click', function() {
     modalTitle.textContent = 'Add Product';
     submitText.textContent = 'Add Product';
     productForm.reset();
+    document.getElementById('productActive').checked = true;
+    document.getElementById('productFeatured').checked = false;
+    document.getElementById('currentImagePreview').classList.add('hidden');
     productModal.classList.remove('hidden');
 });
 
@@ -246,7 +280,6 @@ function editProduct(id) {
             modalTitle.textContent = 'Edit Product';
             submitText.textContent = 'Update Product';
             
-            document.getElementById('productId').value = product.id;
             document.getElementById('productName').value = product.name;
             document.getElementById('productSku').value = product.sku || '';
             document.getElementById('productCategory').value = product.category_id;
@@ -257,9 +290,24 @@ function editProduct(id) {
             document.getElementById('productDiscountPrice').value = product.discount_price || '';
             document.getElementById('productStock').value = product.stock_quantity;
             document.getElementById('productDescription').value = product.description;
-            document.getElementById('productSpecifications').value = product.specifications || '';
+            
+            // Handle specifications - convert object to JSON string for display
+            if (product.specifications && typeof product.specifications === 'object') {
+                document.getElementById('productSpecifications').value = JSON.stringify(product.specifications, null, 2);
+            } else {
+                document.getElementById('productSpecifications').value = '';
+            }
+            
             document.getElementById('productActive').checked = product.is_active;
             document.getElementById('productFeatured').checked = product.is_featured;
+            
+            // Show current image if exists
+            if (product.image_url) {
+                document.getElementById('currentImage').src = `/storage/${product.image_url}`;
+                document.getElementById('currentImagePreview').classList.remove('hidden');
+            } else {
+                document.getElementById('currentImagePreview').classList.add('hidden');
+            }
             
             productModal.classList.remove('hidden');
         })
@@ -297,6 +345,23 @@ document.getElementById('cancelBtn').addEventListener('click', function() {
 productModal.addEventListener('click', function(e) {
     if (e.target === productModal) {
         productModal.classList.add('hidden');
+    }
+});
+
+// Validate JSON before form submission
+productForm.addEventListener('submit', function(e) {
+    const specsField = document.getElementById('productSpecifications');
+    const specsValue = specsField.value.trim();
+    
+    if (specsValue) {
+        try {
+            JSON.parse(specsValue);
+        } catch (error) {
+            e.preventDefault();
+            alert('Invalid JSON in specifications field. Please fix or leave it empty.');
+            specsField.focus();
+            return false;
+        }
     }
 });
 </script>

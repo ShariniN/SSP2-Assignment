@@ -10,19 +10,19 @@ class Product extends Model
     use HasFactory; 
 
     protected $fillable = [
-        'name',
-        'description',
-        'price',
-        'discount_price',
-        'stock_quantity',
-        'category_id',
-        'brand_id',
-        'sku',
-        'image',
-        'specifications',
-        'is_active',
-        'is_featured'
-    ];
+    'name',
+    'description',
+    'price',
+    'discount_price',
+    'stock_quantity',
+    'category_id',
+    'brand_id',
+    'sku',
+    'image_url',  
+    'specifications',
+    'is_active',
+    'is_featured'
+];
 
     protected $casts = [
         'specifications' => 'json',

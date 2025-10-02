@@ -101,36 +101,46 @@ class ProductController extends Controller
     }
 
     public function show($id)
-    {
-        $product = Product::where('is_active', true)
-            ->with(['category'])
-            ->findOrFail($id);
+{
+    // Load product with category and reviews (with user relationship)
+    $product = Product::where('is_active', true)
+        ->with(['category', 'reviews.user'])
+        ->findOrFail($id);
 
-        // Get related products from the same category
-        $relatedProducts = Product::where('is_active', true)
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->take(4)
-            ->get();
+    // Get related products from the same category
+    $relatedProducts = Product::where('is_active', true)
+        ->where('category_id', $product->category_id)
+        ->where('id', '!=', $product->id)
+        ->inStock()
+        ->take(4)
+        ->get();
 
-        // Mock data for reviews (since we don't have a Review model yet)
-        $averageRating = 4.2; // This should come from actual reviews
-        $reviewCount = 15;    // This should come from actual reviews count
+    // Calculate review statistics
+    $reviewCount = $product->reviews->count();
+    $averageRating = $reviewCount > 0 ? $product->reviews->avg('rating') : 0;
 
-        // Get product specifications (assuming you have a specifications JSON field)
-        $specifications = $product->specifications ? json_decode($product->specifications, true) : [];
-
-        // Track product view (for analytics)
-        $this->trackProductView($product);
-
-        return view('products.show', compact(
-            'product',
-            'relatedProducts',
-            'averageRating',
-            'reviewCount',
-            'specifications'
-        ));
+    // Get product specifications - properly decode from JSON
+    // The cast in the model should handle this, but we'll ensure it's an array
+    $specifications = [];
+    if ($product->specifications) {
+        if (is_string($product->specifications)) {
+            $specifications = json_decode($product->specifications, true) ?? [];
+        } elseif (is_array($product->specifications)) {
+            $specifications = $product->specifications;
+        }
     }
+
+    // Track product view (for analytics)
+    $this->trackProductView($product);
+
+    return view('products.show', compact(
+        'product',
+        'relatedProducts',
+        'averageRating',
+        'reviewCount',
+        'specifications'
+    ));
+}
 
     public function quickView($id)
     {
@@ -142,7 +152,7 @@ class ProductController extends Controller
             'price' => $product->price,
             'discount_price' => $product->discount_price,
             'description' => $product->description,
-            'image' => $product->image ? asset('storage/' . $product->image) : null,
+            'image_url' => $product->image ? asset('storage/' . $product->image) : null,
             'stock_quantity' => $product->stock_quantity,
             'sku' => $product->sku,
         ]);
@@ -200,7 +210,7 @@ class ProductController extends Controller
             'id' => $product->id,
             'name' => $product->name,
             'price' => $product->price,
-            'image' => $product->image,
+            'image_url' => $product->image,
             'viewed_at' => now()
         ]);
         
@@ -229,5 +239,40 @@ class ProductController extends Controller
         }
         
         return view('products.compare', compact('products'));
+    }
+
+    public function apiIndex()
+    {
+        try {
+            $products = Product::where('is_active', true)
+                ->with('category')
+                ->latest()
+                ->get();
+
+            return response()->json($products, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function apiShow($id)
+    {
+        try {
+            $product = Product::where('is_active', true)
+                ->with('category')
+                ->findOrFail($id);
+
+            return response()->json($product, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
     }
 }

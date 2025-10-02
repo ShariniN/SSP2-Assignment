@@ -12,9 +12,6 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
     <!-- Livewire Styles -->
     @livewireStyles
 
@@ -67,14 +64,9 @@
                     </div>
                 </div>
 
-                <!-- Search -->
+                <!-- Search (Livewire Desktop) -->
                 <div class="hidden md:flex flex-1 max-w-lg mx-8">
-                    <div class="relative w-full">
-                        <input type="text" placeholder="Search for products..." class="w-full px-4 py-3 pl-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-4">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </div>
-                    </div>
+                    <livewire:product-search />
                 </div>
 
                 <!-- Right Actions -->
@@ -151,9 +143,9 @@
                 </div>
             </div>
 
-            <!-- Mobile Search -->
+            <!-- Mobile Search (Livewire) -->
             <div x-show="searchOpen" x-transition class="md:hidden px-4 pb-4">
-                <input type="text" placeholder="Search for products..." class="w-full px-4 py-3 pl-12 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <livewire:product-search />
             </div>
         </div>
     </nav>

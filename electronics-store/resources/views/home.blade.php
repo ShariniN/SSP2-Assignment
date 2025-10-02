@@ -91,8 +91,8 @@
                     @foreach($featuredProducts as $product)
                         <div class="group bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden transform hover:-translate-y-2">
                             <div class="relative overflow-hidden">
-                                @if($product->image)
-                                    <img src="{{ asset('storage/' . $product->image) }}" 
+                                @if($product->image_url)
+                                    <img src="{{ asset('storage/' . $product->image_url) }}" 
                                          alt="{{ $product->name }}" 
                                          class="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500">
                                 @else
@@ -202,8 +202,8 @@
                 @foreach($bestSellers as $index => $product)
                     <div class="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-yellow-200 overflow-hidden transform hover:-translate-y-2">
                         <div class="relative">
-                            @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" 
+                            @if($product->image_url)
+                                <img src="{{ asset('storage/' . $product->image_url) }}" 
                                      alt="{{ $product->name }}" 
                                      class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
                             @else

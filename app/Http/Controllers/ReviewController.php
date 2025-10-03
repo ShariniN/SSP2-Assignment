@@ -48,39 +48,38 @@ class ReviewController extends Controller
      * Store a newly created review
      */
     public function store(Request $request, $productId)
-    {
-        $product = Product::findOrFail($productId);
+{
+    $product = Product::findOrFail($productId);
 
-        // Validate the request
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|min:10|max:1000',
-        ]);
+    // Validate the request
+    $validated = $request->validate([
+        'rating' => 'required|integer|min:1|max:5',
+        'comment' => 'required|string|min:10|max:1000',
+    ]);
 
-        // Check if user already reviewed this product
-        $existingReview = Review::where('product_id', $productId)
-            ->where('user_id', Auth::id())
-            ->first();
+    // Check if user already reviewed this product
+    $existingReview = Review::where('product_id', $productId)
+        ->where('user_id', Auth::id())
+        ->first();
 
-        if ($existingReview) {
-            return redirect()
-                ->route('product.show', $productId)
-                ->with('error', 'You have already reviewed this product.');
-        }
-
-        // Create the review
-        Review::create([
-            'product_id' => $productId,
-            'user_id' => Auth::id(),
-            'rating' => $validated['rating'],
-            'comment' => $validated['comment'],
-            'is_verified' => false, // Can be set to true if user purchased the product
-        ]);
-
+    if ($existingReview) {
         return redirect()
             ->route('product.show', $productId)
-            ->with('success', 'Thank you for your review!');
+            ->with('error', 'You have already reviewed this product.');
     }
+
+    // Create the review (removed is_verified)
+    Review::create([
+        'product_id' => $productId,
+        'user_id' => Auth::id(),
+        'rating' => $validated['rating'],
+        'comment' => $validated['comment'],
+    ]);
+
+    return redirect()
+        ->route('product.show', $productId)
+        ->with('success', 'Thank you for your review!');
+}
 
     /**
      * Show the form for editing a review

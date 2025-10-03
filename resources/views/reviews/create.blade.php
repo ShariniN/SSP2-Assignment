@@ -17,7 +17,7 @@
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <div class="flex items-center gap-4">
                 @if($product->image_url)
-                    <img src="{{ asset('storage/' . $product->image_url) }}" 
+                    <img src="{{ asset($product->image_url) }}" 
                          alt="{{ $product->name }}" 
                          class="w-20 h-20 object-cover rounded-lg">
                 @else

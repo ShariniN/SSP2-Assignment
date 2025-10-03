@@ -209,7 +209,7 @@
                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div class="flex items-center">
                             @if($product->image)
-                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-12 h-12 object-cover rounded">
+                                <img src="{{ asset($product->image) }}" alt="{{ $product->name }}" class="w-12 h-12 object-cover rounded">
                             @else
                                 <div class="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
                                     <i class="fas fa-image text-gray-500"></i>

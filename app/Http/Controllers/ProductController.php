@@ -244,7 +244,7 @@ class ProductController extends Controller
 {
     try {
         $products = Product::where('is_active', true)
-            ->with(['category', 'brand']) // Add brand relationship
+            ->with(['category', 'brand']) // Include brand relationship
             ->latest()
             ->get()
             ->map(function ($product) {
@@ -257,9 +257,11 @@ class ProductController extends Controller
                     'sku' => $product->sku,
                     'stock_quantity' => $product->stock_quantity,
                     'category_id' => $product->category_id,
-                    'brand_id' => $product->brand_id, // Add this
-                    'brand_name' => $product->brand ? $product->brand->name : null, // Add this
-                    'image_url' => $product->image,
+                    'brand_id' => $product->brand_id,
+                    'brand_name' => $product->brand ? $product->brand->name : null,
+                    'image_url' => $product->image 
+                        ? url('/images/' . ltrim($product->image, '/')) 
+                        : null,
                     'category' => $product->category ? [
                         'id' => $product->category->id,
                         'name' => $product->category->name,
@@ -286,7 +288,7 @@ public function apiShow($id)
 {
     try {
         $product = Product::where('is_active', true)
-            ->with(['category', 'brand', 'reviews.user']) // Add brand
+            ->with(['category', 'brand', 'reviews.user'])
             ->findOrFail($id);
 
         return response()->json([
@@ -298,9 +300,11 @@ public function apiShow($id)
             'sku' => $product->sku,
             'stock_quantity' => $product->stock_quantity,
             'category_id' => $product->category_id,
-            'brand_id' => $product->brand_id, // Add this
-            'brand_name' => $product->brand ? $product->brand->name : null, 
-            'image_url' => $product->image,
+            'brand_id' => $product->brand_id,
+            'brand_name' => $product->brand ? $product->brand->name : null,
+            'image_url' => $product->image 
+                ? url('/images/' . ltrim($product->image, '/')) 
+                : null,
             'category' => $product->category ? [
                 'id' => $product->category->id,
                 'name' => $product->category->name,

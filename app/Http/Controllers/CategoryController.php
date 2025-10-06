@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-
     public function index()
     {
         $categories = Category::where('is_active', true)
@@ -71,6 +70,8 @@ class CategoryController extends Controller
         return view('category', compact('category', 'products'));
     }
 
+    // API Methods
+
     public function apiIndex()
     {
         try {
@@ -92,46 +93,47 @@ class CategoryController extends Controller
         }
     }
 
-    // In CategoryController.php - apiProducts method
-public function apiProducts($id)
-{
-    try {
-        $category = Category::where('is_active', true)->findOrFail($id);
-        
-        $products = $category->products()
-            ->where('is_active', true)
-            ->with('brand') // Add this
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'discount_price' => $product->discount_price,
-                    'description' => $product->description,
-                    'sku' => $product->sku,
-                    'stock_quantity' => $product->stock_quantity,
-                    'category_id' => $product->category_id,
-                    'brand_id' => $product->brand_id, // Add this
-                    'brand_name' => $product->brand ? $product->brand->name : null, // Add this
-                    'image_url' => $product->image ? asset('storage/' . $product->image) : null,
-                    'specifications' => is_string($product->specifications)
-                        ? json_decode($product->specifications, true)
-                        : $product->specifications,
-                    'is_active' => $product->is_active,
-                    'is_featured' => $product->is_featured,
-                ];
-            });
+    public function apiProducts($id)
+    {
+        try {
+            $category = Category::where('is_active', true)->findOrFail($id);
+            
+            $products = $category->products()
+                ->where('is_active', true)
+                ->with('brand')
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'price' => $product->price,
+                        'discount_price' => $product->discount_price,
+                        'description' => $product->description,
+                        'sku' => $product->sku,
+                        'stock_quantity' => $product->stock_quantity,
+                        'category_id' => $product->category_id,
+                        'brand_id' => $product->brand_id,
+                        'brand_name' => $product->brand ? $product->brand->name : null,
+                        'image_url' => $product->image 
+                            ? url('/images/' . ltrim($product->image, '/')) 
+                            : null,
+                        'specifications' => is_string($product->specifications)
+                            ? json_decode($product->specifications, true)
+                            : $product->specifications,
+                        'is_active' => $product->is_active,
+                        'is_featured' => $product->is_featured,
+                    ];
+                });
 
-        return response()->json(['products' => $products], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch products',
-            'error' => $e->getMessage()
-        ], 500);
+            return response()->json(['products' => $products], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     public function apiSearch(Request $request)
     {
@@ -159,8 +161,30 @@ public function apiProducts($id)
                                      ->orWhere('description', 'LIKE', "%{$query}%")
                                      ->orWhere('brand', 'LIKE', "%{$query}%");
                                })
-                               ->with('category')
-                               ->get();
+                               ->with('category', 'brand')
+                               ->get()
+                               ->map(function ($product) {
+                                   return [
+                                       'id' => $product->id,
+                                       'name' => $product->name,
+                                       'price' => $product->price,
+                                       'discount_price' => $product->discount_price,
+                                       'description' => $product->description,
+                                       'sku' => $product->sku,
+                                       'stock_quantity' => $product->stock_quantity,
+                                       'category_id' => $product->category_id,
+                                       'brand_id' => $product->brand_id,
+                                       'brand_name' => $product->brand ? $product->brand->name : null,
+                                       'image_url' => $product->image 
+                                           ? url('/images/' . ltrim($product->image, '/')) 
+                                           : null,
+                                       'specifications' => is_string($product->specifications)
+                                           ? json_decode($product->specifications, true)
+                                           : $product->specifications,
+                                       'is_active' => $product->is_active,
+                                       'is_featured' => $product->is_featured,
+                                   ];
+                               });
 
             return response()->json([
                 'success' => true,
@@ -186,8 +210,30 @@ public function apiProducts($id)
 
             $products = Product::where('category_id', $category->id)
                                ->where('is_active', true)
-                               ->with('category')
-                               ->get();
+                               ->with('category', 'brand')
+                               ->get()
+                               ->map(function ($product) {
+                                   return [
+                                       'id' => $product->id,
+                                       'name' => $product->name,
+                                       'price' => $product->price,
+                                       'discount_price' => $product->discount_price,
+                                       'description' => $product->description,
+                                       'sku' => $product->sku,
+                                       'stock_quantity' => $product->stock_quantity,
+                                       'category_id' => $product->category_id,
+                                       'brand_id' => $product->brand_id,
+                                       'brand_name' => $product->brand ? $product->brand->name : null,
+                                       'image_url' => $product->image 
+                                           ? url('/images/' . ltrim($product->image, '/')) 
+                                           : null,
+                                       'specifications' => is_string($product->specifications)
+                                           ? json_decode($product->specifications, true)
+                                           : $product->specifications,
+                                       'is_active' => $product->is_active,
+                                       'is_featured' => $product->is_featured,
+                                   ];
+                               });
 
             return response()->json([
                 'success' => true,

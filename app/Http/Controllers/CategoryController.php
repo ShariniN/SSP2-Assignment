@@ -50,7 +50,7 @@ class CategoryController extends Controller
                                  ->orWhere('description', 'LIKE', "%{$query}%")
                                  ->orWhere('brand', 'LIKE', "%{$query}%");
                            })
-                           ->with('category')
+                           ->with('category', 'brand')
                            ->paginate(12);
 
         return view('categories.search', compact('categories', 'products', 'query'));
@@ -64,7 +64,7 @@ class CategoryController extends Controller
 
         $products = Product::where('category_id', $category->id)
                            ->where('is_active', true)
-                           ->with('category')
+                           ->with('category', 'brand')
                            ->paginate(12);
 
         return view('category', compact('category', 'products'));
@@ -97,10 +97,10 @@ class CategoryController extends Controller
     {
         try {
             $category = Category::where('is_active', true)->findOrFail($id);
-            
+
             $products = $category->products()
                 ->where('is_active', true)
-                ->with('brand')
+                ->with('brand', 'category')
                 ->get()
                 ->map(function ($product) {
                     return [
@@ -115,6 +115,10 @@ class CategoryController extends Controller
                         'brand_id' => $product->brand_id,
                         'brand_name' => $product->brand ? $product->brand->name : null,
                         'image_url' => $product->image ? url($product->image) : null,
+                        'category' => $product->category ? [
+                            'id' => $product->category->id,
+                            'name' => $product->category->name
+                        ] : null,
                         'specifications' => is_string($product->specifications)
                             ? json_decode($product->specifications, true)
                             : $product->specifications,
@@ -174,6 +178,10 @@ class CategoryController extends Controller
                                        'brand_id' => $product->brand_id,
                                        'brand_name' => $product->brand ? $product->brand->name : null,
                                        'image_url' => $product->image ? url($product->image) : null,
+                                       'category' => $product->category ? [
+                                           'id' => $product->category->id,
+                                           'name' => $product->category->name
+                                       ] : null,
                                        'specifications' => is_string($product->specifications)
                                            ? json_decode($product->specifications, true)
                                            : $product->specifications,
@@ -221,6 +229,10 @@ class CategoryController extends Controller
                                        'brand_id' => $product->brand_id,
                                        'brand_name' => $product->brand ? $product->brand->name : null,
                                        'image_url' => $product->image ? url($product->image) : null,
+                                       'category' => $product->category ? [
+                                           'id' => $product->category->id,
+                                           'name' => $product->category->name
+                                       ] : null,
                                        'specifications' => is_string($product->specifications)
                                            ? json_decode($product->specifications, true)
                                            : $product->specifications,

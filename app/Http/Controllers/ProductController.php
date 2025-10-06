@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -64,13 +63,9 @@ class ProductController extends Controller
             ->selectRaw('MIN(price) as min_price, MAX(price) as max_price')
             ->first();
 
-        return view('products.index', compact(
-            'products', 
-            'categories', 
-            'priceRange'
-        ));
+        return view('products.index', compact('products', 'categories', 'priceRange'));
     }
-    
+
     public function search(Request $request)
     {
         $query = $request->input('q') ?: $request->input('search');
@@ -92,7 +87,6 @@ class ProductController extends Controller
 
         $categories = Category::where('is_active', true)->get();
 
-        // Get price range for filters
         $priceRange = Product::where('is_active', true)
             ->selectRaw('MIN(price) as min_price, MAX(price) as max_price')
             ->first();
@@ -101,46 +95,30 @@ class ProductController extends Controller
     }
 
     public function show($id)
-{
-    // Load product with category and reviews (with user relationship)
-    $product = Product::where('is_active', true)
-        ->with(['category', 'reviews.user'])
-        ->findOrFail($id);
+    {
+        $product = Product::where('is_active', true)
+            ->with(['category', 'reviews.user'])
+            ->findOrFail($id);
 
-    // Get related products from the same category
-    $relatedProducts = Product::where('is_active', true)
-        ->where('category_id', $product->category_id)
-        ->where('id', '!=', $product->id)
-        ->inStock()
-        ->take(4)
-        ->get();
+        $relatedProducts = Product::where('is_active', true)
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->take(4)
+            ->get();
 
-    // Calculate review statistics
-    $reviewCount = $product->reviews->count();
-    $averageRating = $reviewCount > 0 ? $product->reviews->avg('rating') : 0;
+        $reviewCount = $product->reviews->count();
+        $averageRating = $reviewCount > 0 ? $product->reviews->avg('rating') : 0;
 
-    // Get product specifications - properly decode from JSON
-    // The cast in the model should handle this, but we'll ensure it's an array
-    $specifications = [];
-    if ($product->specifications) {
-        if (is_string($product->specifications)) {
-            $specifications = json_decode($product->specifications, true) ?? [];
-        } elseif (is_array($product->specifications)) {
-            $specifications = $product->specifications;
-        }
+        $specifications = is_string($product->specifications)
+            ? json_decode($product->specifications, true) ?? []
+            : ($product->specifications ?? []);
+
+        $this->trackProductView($product);
+
+        return view('products.show', compact(
+            'product', 'relatedProducts', 'averageRating', 'reviewCount', 'specifications'
+        ));
     }
-
-    // Track product view (for analytics)
-    $this->trackProductView($product);
-
-    return view('products.show', compact(
-        'product',
-        'relatedProducts',
-        'averageRating',
-        'reviewCount',
-        'specifications'
-    ));
-}
 
     public function quickView($id)
     {
@@ -161,25 +139,15 @@ class ProductController extends Controller
     public function addToWishlist(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-        
-        // Get or create wishlist from session
         $wishlist = session()->get('wishlist', []);
         
         if (!in_array($id, $wishlist)) {
             $wishlist[] = $id;
             session()->put('wishlist', $wishlist);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Product added to wishlist!',
-                'wishlist_count' => count($wishlist)
-            ]);
+            return response()->json(['success' => true, 'message' => 'Product added!', 'wishlist_count' => count($wishlist)]);
         }
         
-        return response()->json([
-            'success' => false,
-            'message' => 'Product already in wishlist!'
-        ]);
+        return response()->json(['success' => false, 'message' => 'Product already in wishlist!']);
     }
 
     public function removeFromWishlist($id)
@@ -188,144 +156,106 @@ class ProductController extends Controller
         $wishlist = array_diff($wishlist, [$id]);
         session()->put('wishlist', $wishlist);
         
-        return response()->json([
-            'success' => true,
-            'message' => 'Product removed from wishlist!',
-            'wishlist_count' => count($wishlist)
-        ]);
+        return response()->json(['success' => true, 'message' => 'Product removed!', 'wishlist_count' => count($wishlist)]);
     }
 
     private function trackProductView($product)
     {
-        // Simple view tracking - in production, you might want to use a more sophisticated system
         $viewedProducts = session()->get('viewed_products', []);
-        
-        // Remove if already exists to avoid duplicates
-        $viewedProducts = array_filter($viewedProducts, function($viewed) use ($product) {
-            return $viewed['id'] != $product->id;
-        });
-        
-        // Add to beginning of array
+        $viewedProducts = array_filter($viewedProducts, fn($v) => $v['id'] != $product->id);
         array_unshift($viewedProducts, [
             'id' => $product->id,
             'name' => $product->name,
             'price' => $product->price,
-            'image_url' => $product->image,
+            'image_url' => $product->image ? url($product->image) : null,
             'viewed_at' => now()
         ]);
-        
-        // Keep only last 10 viewed products
-        $viewedProducts = array_slice($viewedProducts, 0, 10);
-        
-        session()->put('viewed_products', $viewedProducts);
+        session()->put('viewed_products', array_slice($viewedProducts, 0, 10));
     }
 
     public function compare(Request $request)
     {
         $productIds = $request->get('products', []);
-        
         if (empty($productIds)) {
-            return redirect()->route('products.index')
-                ->with('error', 'Please select products to compare.');
+            return redirect()->route('products.index')->with('error', 'Select products to compare.');
         }
-        
-        $products = Product::whereIn('id', $productIds)
-            ->where('is_active', true)
-            ->get();
-        
+
+        $products = Product::whereIn('id', $productIds)->where('is_active', true)->get();
         if ($products->count() < 2) {
-            return redirect()->route('products.index')
-                ->with('error', 'Please select at least 2 products to compare.');
+            return redirect()->route('products.index')->with('error', 'Select at least 2 products.');
         }
-        
+
         return view('products.compare', compact('products'));
     }
+
+    // API: Get all products
     public function apiIndex()
-{
-    try {
-        $products = Product::where('is_active', true)
-            ->with(['category', 'brand']) // Include brand relationship
-            ->latest()
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'discount_price' => $product->discount_price,
-                    'description' => $product->description,
-                    'sku' => $product->sku,
-                    'stock_quantity' => $product->stock_quantity,
-                    'category_id' => $product->category_id,
-                    'brand_id' => $product->brand_id,
-                    'brand_name' => $product->brand ? $product->brand->name : null,
-                    'image_url' => $product->image ? url($product->image) : null,
-                    'category' => $product->category ? [
-                        'id' => $product->category->id,
-                        'name' => $product->category->name,
-                    ] : null,
-                    'specifications' => is_string($product->specifications)
-                        ? json_decode($product->specifications, true)
-                        : $product->specifications,
-                    'is_active' => $product->is_active,
-                    'is_featured' => $product->is_featured,
-                ];
-            });
+    {
+        try {
+            $products = Product::where('is_active', true)
+                ->with(['category', 'brand'])
+                ->latest()
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'price' => $product->price,
+                        'discount_price' => $product->discount_price,
+                        'description' => $product->description,
+                        'sku' => $product->sku,
+                        'stock_quantity' => $product->stock_quantity,
+                        'category_id' => $product->category_id,
+                        'brand_id' => $product->brand_id,
+                        'brand_name' => $product->brand ? $product->brand->name : null,
+                        'image_url' => $product->image ? url($product->image) : null,
+                        'category' => $product->category ? ['id' => $product->category->id, 'name' => $product->category->name] : null,
+                        'specifications' => is_string($product->specifications) ? json_decode($product->specifications, true) : $product->specifications,
+                        'is_active' => $product->is_active,
+                        'is_featured' => $product->is_featured,
+                    ];
+                });
 
-        return response()->json($products, 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch products',
-            'error' => $e->getMessage()
-        ], 500);
+            return response()->json($products, 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to fetch products', 'error' => $e->getMessage()], 500);
+        }
     }
-}
 
-public function apiShow($id)
-{
-    try {
-        $product = Product::where('is_active', true)
-            ->with(['category', 'brand', 'reviews.user'])
-            ->findOrFail($id);
+    // API: Get single product by ID
+    public function apiShow($id)
+    {
+        try {
+            $product = Product::where('is_active', true)
+                ->with(['category', 'brand', 'reviews.user'])
+                ->findOrFail($id);
 
-        return response()->json([
-            'id' => $product->id,
-            'name' => $product->name,
-            'price' => $product->price,
-            'discount_price' => $product->discount_price,
-            'description' => $product->description,
-            'sku' => $product->sku,
-            'stock_quantity' => $product->stock_quantity,
-            'category_id' => $product->category_id,
-            'brand_id' => $product->brand_id,
-            'brand_name' => $product->brand ? $product->brand->name : null,
-            'image_url' => $product->image ? url($product->image) : null,
-            'category' => $product->category ? [
-                'id' => $product->category->id,
-                'name' => $product->category->name,
-            ] : null,
-            'specifications' => is_string($product->specifications)
-                ? json_decode($product->specifications, true)
-                : $product->specifications,
-            'is_active' => $product->is_active,
-            'is_featured' => $product->is_featured,
-            'reviews' => $product->reviews->map(function ($review) {
-                return [
-                    'id' => $review->id,
-                    'user' => $review->user ? $review->user->name : 'Anonymous',
-                    'rating' => $review->rating,
-                    'comment' => $review->comment,
-                    'created_at' => $review->created_at->toDateTimeString(),
-                ];
-            }),
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Product not found',
-            'error' => $e->getMessage()
-        ], 404);
+            return response()->json([
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'discount_price' => $product->discount_price,
+                'description' => $product->description,
+                'sku' => $product->sku,
+                'stock_quantity' => $product->stock_quantity,
+                'category_id' => $product->category_id,
+                'brand_id' => $product->brand_id,
+                'brand_name' => $product->brand ? $product->brand->name : null,
+                'image_url' => $product->image ? url($product->image) : null,
+                'category' => $product->category ? ['id' => $product->category->id, 'name' => $product->category->name] : null,
+                'specifications' => is_string($product->specifications) ? json_decode($product->specifications, true) : $product->specifications,
+                'is_active' => $product->is_active,
+                'is_featured' => $product->is_featured,
+                'reviews' => $product->reviews->map(fn($r) => [
+                    'id' => $r->id,
+                    'user' => $r->user ? $r->user->name : 'Anonymous',
+                    'rating' => $r->rating,
+                    'comment' => $r->comment,
+                    'created_at' => $r->created_at->toDateTimeString(),
+                ]),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Product not found', 'error' => $e->getMessage()], 404);
+        }
     }
-}
 }

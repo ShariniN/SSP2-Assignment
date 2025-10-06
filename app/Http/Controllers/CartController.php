@@ -29,14 +29,20 @@ class CartController extends Controller
     /**
      * Add item to cart
      */
+
     public function store(Request $request)
 {
+    \Log::info('=== CART STORE START ===');
+    \Log::info('User ID: ' . Auth::id());
+    \Log::info('Request data:', $request->all());
+
     $request->validate([
         'product_id' => 'required|exists:products,id',
         'quantity' => 'required|integer|min:1',
     ]);
 
     $product = Product::findOrFail($request->product_id);
+    \Log::info('Product found:', ['id' => $product->id, 'name' => $product->name]);
 
     if ($product->stock_quantity < $request->quantity) {
         return response()->json([
@@ -44,13 +50,25 @@ class CartController extends Controller
         ], 400);
     }
 
+    // Check if cart exists
+    $existingCart = Cart::where('user_id', Auth::id())->first();
+    \Log::info('Existing cart:', ['exists' => $existingCart ? 'yes' : 'no']);
+
     $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
+    \Log::info('Cart after firstOrCreate:', ['id' => $cart->id, 'user_id' => $cart->user_id]);
+
+    // Check if cart item exists
+    $existingCartItem = CartItem::where('cart_id', $cart->id)
+        ->where('product_id', $request->product_id)
+        ->first();
+    \Log::info('Existing cart item:', ['exists' => $existingCartItem ? 'yes' : 'no']);
 
     $cartItem = CartItem::where('cart_id', $cart->id)
         ->where('product_id', $request->product_id)
         ->first();
 
     if ($cartItem) {
+        \Log::info('Updating existing cart item');
         $newQuantity = $cartItem->quantity + $request->quantity;
         
         if ($newQuantity > $product->stock_quantity) {
@@ -60,84 +78,26 @@ class CartController extends Controller
         }
 
         $cartItem->update(['quantity' => $newQuantity]);
+        \Log::info('Cart item updated:', ['id' => $cartItem->id, 'new_quantity' => $newQuantity]);
     } else {
+        \Log::info('Creating new cart item');
         $cartItem = CartItem::create([
             'cart_id' => $cart->id,
             'product_id' => $request->product_id,
             'quantity' => $request->quantity,
         ]);
+        \Log::info('Cart item created:', ['id' => $cartItem->id]);
     }
 
-        // IMPORTANT: Load the product relationship
-        $cartItem->load('product');
+    // Verify the data was saved
+    $verifyCart = Cart::find($cart->id);
+    $verifyCartItem = CartItem::find($cartItem->id);
+    \Log::info('Verification - Cart:', ['exists' => $verifyCart ? 'yes' : 'no']);
+    \Log::info('Verification - CartItem:', ['exists' => $verifyCartItem ? 'yes' : 'no']);
 
-        return response()->json($cartItem, 201);  // Return cart item directly
-    }
+    $cartItem->load('product');
+    \Log::info('=== CART STORE END ===');
 
-    /**
-     * Update cart item quantity
-     */
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'quantity' => 'required|integer|min:1',
-        ]);
-
-        $cartItem = CartItem::findOrFail($id);
-
-        // Verify the cart belongs to the authenticated user
-        if ($cartItem->cart->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        // Check stock availability
-        if ($cartItem->product->stock_quantity < $request->quantity) {
-            return response()->json([
-                'message' => 'Not enough stock available.'
-            ], 400);
-        }
-
-        $cartItem->update(['quantity' => $request->quantity]);
-        $cartItem->load('product');
-
-        return response()->json([
-            'message' => 'Cart item updated successfully!',
-            'cart_item' => $cartItem
-        ]);
-    }
-
-    /**
-     * Remove item from cart
-     */
-    public function destroy($id)
-    {
-        $cartItem = CartItem::findOrFail($id);
-
-        // Verify the cart belongs to the authenticated user
-        if ($cartItem->cart->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $cartItem->delete();
-
-        return response()->json([
-            'message' => 'Item removed from cart successfully!'
-        ]);
-    }
-
-    /**
-     * Clear entire cart
-     */
-    public function clear()
-    {
-        $cart = Cart::where('user_id', Auth::id())->first();
-
-        if ($cart) {
-            $cart->items()->delete();
-        }
-
-        return response()->json([
-            'message' => 'Cart cleared successfully!'
-        ]);
-    }
+    return response()->json($cartItem, 201);
+}
 }

@@ -11,7 +11,7 @@ class Cart extends Model
     
     protected $fillable = [
         'user_id',
-        'session_id'
+        'total'  // Changed from 'session_id' to match your actual table
     ];
     
     /**
@@ -46,10 +46,5 @@ class Cart extends Model
         return $this->items->sum(function($item) {
             return $item->product->price * $item->quantity;
         });
-    }
-
-     public function product()
-    {
-        return $this->belongsTo(Product::class, 'product_id');
     }
 }

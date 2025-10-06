@@ -152,7 +152,7 @@ class ProductController extends Controller
             'price' => $product->price,
             'discount_price' => $product->discount_price,
             'description' => $product->description,
-            'image_url' => $product->image ? asset('storage/' . $product->image) : null,
+            'image_url' => $product->image ? url($product->image) : null,
             'stock_quantity' => $product->stock_quantity,
             'sku' => $product->sku,
         ]);
@@ -259,9 +259,7 @@ class ProductController extends Controller
                     'category_id' => $product->category_id,
                     'brand_id' => $product->brand_id,
                     'brand_name' => $product->brand ? $product->brand->name : null,
-                    'image_url' => $product->image 
-                        ? url('/images/' . ltrim($product->image, '/')) 
-                        : null,
+                    'image_url' => $product->image ? url($product->image) : null,
                     'category' => $product->category ? [
                         'id' => $product->category->id,
                         'name' => $product->category->name,
@@ -302,9 +300,7 @@ public function apiShow($id)
             'category_id' => $product->category_id,
             'brand_id' => $product->brand_id,
             'brand_name' => $product->brand ? $product->brand->name : null,
-            'image_url' => $product->image 
-                ? url('/images/' . ltrim($product->image, '/')) 
-                : null,
+            'image_url' => $product->image ? url($product->image) : null,
             'category' => $product->category ? [
                 'id' => $product->category->id,
                 'name' => $product->category->name,

@@ -114,9 +114,7 @@ class CategoryController extends Controller
                         'category_id' => $product->category_id,
                         'brand_id' => $product->brand_id,
                         'brand_name' => $product->brand ? $product->brand->name : null,
-                        'image_url' => $product->image 
-                            ? url('/images/' . ltrim($product->image, '/')) 
-                            : null,
+                        'image_url' => $product->image ? url($product->image) : null,
                         'specifications' => is_string($product->specifications)
                             ? json_decode($product->specifications, true)
                             : $product->specifications,
@@ -175,9 +173,7 @@ class CategoryController extends Controller
                                        'category_id' => $product->category_id,
                                        'brand_id' => $product->brand_id,
                                        'brand_name' => $product->brand ? $product->brand->name : null,
-                                       'image_url' => $product->image 
-                                           ? url('/images/' . ltrim($product->image, '/')) 
-                                           : null,
+                                       'image_url' => $product->image ? url($product->image) : null,
                                        'specifications' => is_string($product->specifications)
                                            ? json_decode($product->specifications, true)
                                            : $product->specifications,
@@ -224,9 +220,7 @@ class CategoryController extends Controller
                                        'category_id' => $product->category_id,
                                        'brand_id' => $product->brand_id,
                                        'brand_name' => $product->brand ? $product->brand->name : null,
-                                       'image_url' => $product->image 
-                                           ? url('/images/' . ltrim($product->image, '/')) 
-                                           : null,
+                                       'image_url' => $product->image ? url($product->image) : null,
                                        'specifications' => is_string($product->specifications)
                                            ? json_decode($product->specifications, true)
                                            : $product->specifications,

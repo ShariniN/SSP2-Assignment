@@ -21,6 +21,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products', [ProductController::class, 'apiIndex']);       
     Route::get('/products/{id}', [ProductController::class, 'apiShow']);   
 
+    //Wishlist
+    Route::get('/wishlist', [WishlistController::class, 'index']);
+    Route::post('/wishlist/add', [WishlistController::class, 'add']);
+    Route::delete('/wishlist/remove/{productId}', [WishlistController::class, 'remove']);
+
     // Categories
     Route::get('/categories', [CategoryController::class, 'apiIndex']);                 
     Route::get('/categories/{id}/products', [CategoryController::class, 'apiProducts']); 

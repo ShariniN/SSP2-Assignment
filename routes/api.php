@@ -15,6 +15,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 
 // Protected API routes
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', [AuthController::class, 'me']);
 
     // Products
     Route::get('/products', [ProductController::class, 'apiIndex']);       
@@ -32,11 +33,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart/clear', [CartController::class, 'clear']); 
     Route::put('/cart/{id}', [CartController::class, 'update']);
     Route::delete('/cart/{id}', [CartController::class, 'destroy']);
-
-    // Wishlist
-    Route::get('/wishlist', [WishlistController::class, 'index']); 
-    Route::post('/wishlist', [WishlistController::class, 'store']);
-    Route::delete('/wishlist/{id}', [WishlistController::class, 'destroy']);
 
     // Orders
     Route::get('/orders', [OrderController::class, 'index']);

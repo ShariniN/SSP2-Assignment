@@ -259,7 +259,7 @@ class ProductController extends Controller
                     'category_id' => $product->category_id,
                     'brand_id' => $product->brand_id, // Add this
                     'brand_name' => $product->brand ? $product->brand->name : null, // Add this
-                    'image_url' => $product->image ? asset( $product->image) : null,
+                    'image_url' => $product->image,
                     'category' => $product->category ? [
                         'id' => $product->category->id,
                         'name' => $product->category->name,
@@ -300,7 +300,7 @@ public function apiShow($id)
             'category_id' => $product->category_id,
             'brand_id' => $product->brand_id, // Add this
             'brand_name' => $product->brand ? $product->brand->name : null, 
-            'image_url' => $product->image ? asset($product->image) : null,
+            'image_url' => $product->image,
             'category' => $product->category ? [
                 'id' => $product->category->id,
                 'name' => $product->category->name,

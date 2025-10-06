@@ -242,37 +242,73 @@ class ProductController extends Controller
     }
 
     public function apiIndex()
-    {
-        try {
-            $products = Product::where('is_active', true)
-                ->with('category')
-                ->latest()
-                ->get();
+{
+    try {
+        $products = Product::where('is_active', true)
+            ->with('category')
+            ->latest()
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'discount_price' => $product->discount_price,
+                    'description' => $product->description,
+                    'sku' => $product->sku,
+                    'image' => $product->image ? asset('storage/' . $product->image) : null,
+                    'category' => $product->category ? $product->category->name : null,
+                    'specifications' => is_string($product->specifications)
+                        ? json_decode($product->specifications, true)
+                        : $product->specifications,
+                ];
+            });
 
-            return response()->json($products, 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch products',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json($products, 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch products',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
-    public function apiShow($id)
-    {
-        try {
-            $product = Product::where('is_active', true)
-                ->with('category')
-                ->findOrFail($id);
+public function apiShow($id)
+{
+    try {
+        $product = Product::where('is_active', true)
+            ->with(['category', 'reviews.user'])
+            ->findOrFail($id);
 
-            return response()->json($product, 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product not found',
-                'error' => $e->getMessage()
-            ], 404);
-        }
+        return response()->json([
+            'id' => $product->id,
+            'name' => $product->name,
+            'price' => $product->price,
+            'discount_price' => $product->discount_price,
+            'description' => $product->description,
+            'sku' => $product->sku,
+            'image' => $product->image ? asset('storage/' . $product->image) : null,
+            'category' => $product->category ? $product->category->name : null,
+            'specifications' => is_string($product->specifications)
+                ? json_decode($product->specifications, true)
+                : $product->specifications,
+            'reviews' => $product->reviews->map(function ($review) {
+                return [
+                    'id' => $review->id,
+                    'user' => $review->user ? $review->user->name : 'Anonymous',
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'created_at' => $review->created_at->toDateTimeString(),
+                ];
+            }),
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product not found',
+            'error' => $e->getMessage()
+        ], 404);
     }
+}
 }

@@ -240,12 +240,11 @@ class ProductController extends Controller
         
         return view('products.compare', compact('products'));
     }
-
     public function apiIndex()
 {
     try {
         $products = Product::where('is_active', true)
-            ->with('category')
+            ->with(['category', 'brand']) // Add brand relationship
             ->latest()
             ->get()
             ->map(function ($product) {
@@ -256,11 +255,20 @@ class ProductController extends Controller
                     'discount_price' => $product->discount_price,
                     'description' => $product->description,
                     'sku' => $product->sku,
-                    'image' => $product->image ? asset('storage/' . $product->image) : null,
-                    'category' => $product->category ? $product->category->name : null,
+                    'stock_quantity' => $product->stock_quantity,
+                    'category_id' => $product->category_id,
+                    'brand_id' => $product->brand_id, // Add this
+                    'brand_name' => $product->brand ? $product->brand->name : null, // Add this
+                    'image_url' => $product->image ? asset('storage/' . $product->image) : null,
+                    'category' => $product->category ? [
+                        'id' => $product->category->id,
+                        'name' => $product->category->name,
+                    ] : null,
                     'specifications' => is_string($product->specifications)
                         ? json_decode($product->specifications, true)
                         : $product->specifications,
+                    'is_active' => $product->is_active,
+                    'is_featured' => $product->is_featured,
                 ];
             });
 
@@ -278,7 +286,7 @@ public function apiShow($id)
 {
     try {
         $product = Product::where('is_active', true)
-            ->with(['category', 'reviews.user'])
+            ->with(['category', 'brand', 'reviews.user']) // Add brand
             ->findOrFail($id);
 
         return response()->json([
@@ -288,11 +296,20 @@ public function apiShow($id)
             'discount_price' => $product->discount_price,
             'description' => $product->description,
             'sku' => $product->sku,
-            'image' => $product->image ? asset('storage/' . $product->image) : null,
-            'category' => $product->category ? $product->category->name : null,
+            'stock_quantity' => $product->stock_quantity,
+            'category_id' => $product->category_id,
+            'brand_id' => $product->brand_id, // Add this
+            'brand_name' => $product->brand ? $product->brand->name : null, // Add this
+            'image_url' => $product->image ? asset('storage/' . $product->image) : null,
+            'category' => $product->category ? [
+                'id' => $product->category->id,
+                'name' => $product->category->name,
+            ] : null,
             'specifications' => is_string($product->specifications)
                 ? json_decode($product->specifications, true)
                 : $product->specifications,
+            'is_active' => $product->is_active,
+            'is_featured' => $product->is_featured,
             'reviews' => $product->reviews->map(function ($review) {
                 return [
                     'id' => $review->id,

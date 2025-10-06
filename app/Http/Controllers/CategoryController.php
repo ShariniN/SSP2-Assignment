@@ -103,6 +103,18 @@ class CategoryController extends Controller
                 ->with('brand', 'category')
                 ->get()
                 ->map(function ($product) {
+                    // Construct image URL properly
+                    $imageUrl = null;
+                    if (!empty($product->image_url)) {
+                        if (str_starts_with($product->image_url, 'http://') || 
+                            str_starts_with($product->image_url, 'https://')) {
+                            $imageUrl = $product->image_url;
+                        } else {
+                            $imagePath = ltrim($product->image_url, '/');
+                            $imageUrl = url($imagePath);
+                        }
+                    }
+
                     return [
                         'id' => $product->id,
                         'name' => $product->name,
@@ -114,7 +126,7 @@ class CategoryController extends Controller
                         'category_id' => $product->category_id,
                         'brand_id' => $product->brand_id,
                         'brand_name' => $product->brand ? $product->brand->name : null,
-                        'image_url' => $product->image ? url($product->image) : null,
+                        'image_url' => $imageUrl,
                         'category' => $product->category ? [
                             'id' => $product->category->id,
                             'name' => $product->category->name
@@ -166,6 +178,18 @@ class CategoryController extends Controller
                                ->with('category', 'brand')
                                ->get()
                                ->map(function ($product) {
+                                   // Construct image URL properly
+                                   $imageUrl = null;
+                                   if (!empty($product->image_url)) {
+                                       if (str_starts_with($product->image_url, 'http://') || 
+                                           str_starts_with($product->image_url, 'https://')) {
+                                           $imageUrl = $product->image_url;
+                                       } else {
+                                           $imagePath = ltrim($product->image_url, '/');
+                                           $imageUrl = url($imagePath);
+                                       }
+                                   }
+
                                    return [
                                        'id' => $product->id,
                                        'name' => $product->name,
@@ -177,7 +201,7 @@ class CategoryController extends Controller
                                        'category_id' => $product->category_id,
                                        'brand_id' => $product->brand_id,
                                        'brand_name' => $product->brand ? $product->brand->name : null,
-                                       'image_url' => $product->image ? url($product->image) : null,
+                                       'image_url' => $imageUrl,
                                        'category' => $product->category ? [
                                            'id' => $product->category->id,
                                            'name' => $product->category->name
@@ -217,6 +241,18 @@ class CategoryController extends Controller
                                ->with('category', 'brand')
                                ->get()
                                ->map(function ($product) {
+                                   // Construct image URL properly
+                                   $imageUrl = null;
+                                   if (!empty($product->image_url)) {
+                                       if (str_starts_with($product->image_url, 'http://') || 
+                                           str_starts_with($product->image_url, 'https://')) {
+                                           $imageUrl = $product->image_url;
+                                       } else {
+                                           $imagePath = ltrim($product->image_url, '/');
+                                           $imageUrl = url($imagePath);
+                                       }
+                                   }
+
                                    return [
                                        'id' => $product->id,
                                        'name' => $product->name,
@@ -228,7 +264,7 @@ class CategoryController extends Controller
                                        'category_id' => $product->category_id,
                                        'brand_id' => $product->brand_id,
                                        'brand_name' => $product->brand ? $product->brand->name : null,
-                                       'image_url' => $product->image ? url($product->image) : null,
+                                       'image_url' => $imageUrl,
                                        'category' => $product->category ? [
                                            'id' => $product->category->id,
                                            'name' => $product->category->name

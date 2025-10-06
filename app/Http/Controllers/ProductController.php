@@ -130,7 +130,7 @@ class ProductController extends Controller
             'price' => $product->price,
             'discount_price' => $product->discount_price,
             'description' => $product->description,
-            'image_url' => $product->image ? url($product->image) : null,
+            'image_url' => $product->image_url ? url($product->image_url) : null, // FIXED
             'stock_quantity' => $product->stock_quantity,
             'sku' => $product->sku,
         ]);
@@ -167,7 +167,7 @@ class ProductController extends Controller
             'id' => $product->id,
             'name' => $product->name,
             'price' => $product->price,
-            'image_url' => $product->image ? url($product->image) : null,
+            'image_url' => $product->image_url ? url($product->image_url) : null, // FIXED
             'viewed_at' => now()
         ]);
         session()->put('viewed_products', array_slice($viewedProducts, 0, 10));
@@ -197,6 +197,20 @@ class ProductController extends Controller
                 ->latest()
                 ->get()
                 ->map(function ($product) {
+                    // Construct image URL properly
+                    $imageUrl = null;
+                    if (!empty($product->image_url)) {
+                        // If image path doesn't start with http, prepend base URL
+                        if (str_starts_with($product->image_url, 'http://') || 
+                            str_starts_with($product->image_url, 'https://')) {
+                            $imageUrl = $product->image_url;
+                        } else {
+                            // Remove leading slash if present
+                            $imagePath = ltrim($product->image_url, '/');
+                            $imageUrl = url($imagePath);
+                        }
+                    }
+
                     return [
                         'id' => $product->id,
                         'name' => $product->name,
@@ -208,7 +222,7 @@ class ProductController extends Controller
                         'category_id' => $product->category_id,
                         'brand_id' => $product->brand_id,
                         'brand_name' => $product->brand ? $product->brand->name : null,
-                        'image_url' => $product->image ? url($product->image) : null,
+                        'image_url' => $imageUrl,
                         'category' => $product->category ? ['id' => $product->category->id, 'name' => $product->category->name] : null,
                         'specifications' => is_string($product->specifications) ? json_decode($product->specifications, true) : $product->specifications,
                         'is_active' => $product->is_active,
@@ -230,6 +244,18 @@ class ProductController extends Controller
                 ->with(['category', 'brand', 'reviews.user'])
                 ->findOrFail($id);
 
+            // Construct image URL properly
+            $imageUrl = null;
+            if (!empty($product->image_url)) {
+                if (str_starts_with($product->image_url, 'http://') || 
+                    str_starts_with($product->image_url, 'https://')) {
+                    $imageUrl = $product->image_url;
+                } else {
+                    $imagePath = ltrim($product->image_url, '/');
+                    $imageUrl = url($imagePath);
+                }
+            }
+
             return response()->json([
                 'id' => $product->id,
                 'name' => $product->name,
@@ -241,7 +267,7 @@ class ProductController extends Controller
                 'category_id' => $product->category_id,
                 'brand_id' => $product->brand_id,
                 'brand_name' => $product->brand ? $product->brand->name : null,
-                'image_url' => $product->image ? url($product->image) : null,
+                'image_url' => $imageUrl,
                 'category' => $product->category ? ['id' => $product->category->id, 'name' => $product->category->name] : null,
                 'specifications' => is_string($product->specifications) ? json_decode($product->specifications, true) : $product->specifications,
                 'is_active' => $product->is_active,
